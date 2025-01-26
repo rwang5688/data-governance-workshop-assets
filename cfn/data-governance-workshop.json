@@ -1,0 +1,3418 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "The template will create the stack for the data governance immersion day",
+    "Parameters": {
+      "ParticipantAssumedRoleArn": {
+        "Type": "String",
+        "Default": "WSParticipantRole",
+        "Description": "add ARN for the role that you are using to complete this workshop"
+      },
+      "Version": {
+        "Type": "String"
+      },
+      "DefaultPassword": {
+        "Type": "String",
+        "NoEcho": "true"
+      },
+      "DeploymentType": {
+        "Type": "String",
+        "AllowedValues": [
+          "WorkshopStudio",
+          "Other"
+        ],
+        "Default": "WorkshopStudio"
+      }
+    },
+    "Conditions": {
+      "WSAccount": {
+        "Fn::Equals": [
+          {
+            "Ref": "DeploymentType"
+          },
+          "WorkshopStudio"
+        ]
+      },
+      "OwnAccount": {
+        "Fn::Equals": [
+          {
+            "Ref": "DeploymentType"
+          },
+          "Other"
+        ]
+      }
+    },
+    "Mappings": {
+      "RegionMap": {
+        "eu-north-1": {
+          "SourceBucketName": "ws-assets-prod-iad-r-arn-580aeca3990cef5a"
+        },
+        "ap-south-1": {
+          "SourceBucketName": "ws-assets-prod-iad-r-bom-431207042d319a2d"
+        },
+        "eu-west-3": {
+          "SourceBucketName": "ws-assets-prod-iad-r-cdg-9e76383c31ad6229"
+        },
+        "us-east-2": {
+          "SourceBucketName": "ws-assets-prod-iad-r-cmh-8d6e9c21a4dec77d"
+        },
+        "eu-west-1": {
+          "SourceBucketName": "ws-assets-prod-iad-r-dub-85e3be25bd827406"
+        },
+        "eu-central-1": {
+          "SourceBucketName": "ws-assets-prod-iad-r-fra-b129423e91500967"
+        },
+        "sa-east-1": {
+          "SourceBucketName": "ws-assets-prod-iad-r-gru-527b8c19222c1182"
+        },
+        "us-east-1": {
+          "SourceBucketName": "ws-assets-prod-iad-r-iad-ed304a55c2ca1aee"
+        },
+        "ap-northeast-2": {
+          "SourceBucketName": "ws-assets-prod-iad-r-icn-ced060f0d38bc0b0"
+        },
+        "ap-northeast-3": {
+          "SourceBucketName": "ws-assets-prod-iad-r-kix-c2a28ad4e55ea53a"
+        },
+        "eu-west-2": {
+          "SourceBucketName": "ws-assets-prod-iad-r-lhr-cc4472a651221311"
+        },
+        "ap-northeast-1": {
+          "SourceBucketName": "ws-assets-prod-iad-r-nrt-2cb4b4649d0e0f94"
+        },
+        "us-west-2": {
+          "SourceBucketName": "ws-assets-prod-iad-r-pdx-f3b3f9f1a7d6a3d0"
+        },
+        "us-west-1": {
+          "SourceBucketName": "ws-assets-prod-iad-r-sfo-f61fc67057535f1b"
+        },
+        "ap-southeast-1": {
+          "SourceBucketName": "ws-assets-prod-iad-r-sin-694a125e41645312"
+        },
+        "ap-southeast-2": {
+          "SourceBucketName": "ws-assets-prod-iad-r-syd-b04c62a5f16f7b2e"
+        },
+        "ca-central-1": {
+          "SourceBucketName": "ws-assets-prod-iad-r-yul-5c2977cd61bca1f3"
+        }
+      }
+    },
+    "Resources": {
+      "DataLakeSettingsWS": {
+        "Type": "AWS::LakeFormation::DataLakeSettings",
+        "Condition": "WSAccount",
+        "Properties": {
+          "Admins": [
+            {
+              "DataLakePrincipalIdentifier": {
+                "Ref": "ParticipantAssumedRoleArn"
+              }
+            },
+            {
+              "DataLakePrincipalIdentifier": {
+                "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/WSSystemRole"
+              }
+            }
+          ],
+          "CreateDatabaseDefaultPermissions": [],
+          "CreateTableDefaultPermissions": [],
+          "MutationType": "REPLACE"
+        }
+      },
+      "DataLakeSettingsOWN": {
+        "Type": "AWS::LakeFormation::DataLakeSettings",
+        "Condition": "OwnAccount",
+        "Properties": {
+          "Admins": [
+            {
+              "DataLakePrincipalIdentifier": {
+                "Ref": "ParticipantAssumedRoleArn"
+              }
+            }
+          ],
+          "CreateDatabaseDefaultPermissions": [],
+          "CreateTableDefaultPermissions": [],
+          "MutationType": "REPLACE"
+        }
+      },
+      "s3BucketadataZone": {
+        "Type": "AWS::S3::Bucket",
+        "Properties": {
+          "AccessControl": "BucketOwnerFullControl",
+          "PublicAccessBlockConfiguration": {
+            "BlockPublicAcls": true,
+            "BlockPublicPolicy": true,
+            "IgnorePublicAcls": true,
+            "RestrictPublicBuckets": true
+          },
+          "BucketName": {
+            "Fn::Sub": "${AWS::AccountId}-${AWS::Region}-datazone-default"
+          }
+        }
+      },
+      "s3BucketDQ": {
+        "Type": "AWS::S3::Bucket",
+        "Properties": {
+          "AccessControl": "BucketOwnerFullControl",
+          "PublicAccessBlockConfiguration": {
+            "BlockPublicAcls": true,
+            "BlockPublicPolicy": true,
+            "IgnorePublicAcls": true,
+            "RestrictPublicBuckets": true
+          },
+          "BucketName": {
+            "Fn::Sub": "${AWS::AccountId}-${AWS::Region}-datagov-dq"
+          }
+        }
+      },
+      "s3BucketInsuranceCurated": {
+        "Type": "AWS::S3::Bucket",
+        "Properties": {
+          "AccessControl": "BucketOwnerFullControl",
+          "PublicAccessBlockConfiguration": {
+            "BlockPublicAcls": true,
+            "BlockPublicPolicy": true,
+            "IgnorePublicAcls": true,
+            "RestrictPublicBuckets": true
+          },
+          "BucketName": {
+            "Fn::Sub": "${AWS::AccountId}-${AWS::Region}-datagov-insurance-curated"
+          }
+        }
+      },
+      "s3BucketWealthCurated": {
+        "Type": "AWS::S3::Bucket",
+        "Properties": {
+          "AccessControl": "BucketOwnerFullControl",
+          "PublicAccessBlockConfiguration": {
+            "BlockPublicAcls": true,
+            "BlockPublicPolicy": true,
+            "IgnorePublicAcls": true,
+            "RestrictPublicBuckets": true
+          },
+          "BucketName": {
+            "Fn::Sub": "${AWS::AccountId}-${AWS::Region}-datagov-wealthmanagement-curated"
+          }
+        }
+      },
+      "s3BucketPersonalCurated": {
+        "Type": "AWS::S3::Bucket",
+        "Properties": {
+          "AccessControl": "BucketOwnerFullControl",
+          "PublicAccessBlockConfiguration": {
+            "BlockPublicAcls": true,
+            "BlockPublicPolicy": true,
+            "IgnorePublicAcls": true,
+            "RestrictPublicBuckets": true
+          },
+          "BucketName": {
+            "Fn::Sub": "${AWS::AccountId}-${AWS::Region}-datagov-personalbanking-curated"
+          }
+        }
+      },
+      "s3BucketInsuranceRaw": {
+        "Type": "AWS::S3::Bucket",
+        "Properties": {
+          "AccessControl": "BucketOwnerFullControl",
+          "PublicAccessBlockConfiguration": {
+            "BlockPublicAcls": true,
+            "BlockPublicPolicy": true,
+            "IgnorePublicAcls": true,
+            "RestrictPublicBuckets": true
+          },
+          "BucketName": {
+            "Fn::Sub": "${AWS::AccountId}-${AWS::Region}-datagov-insurance-raw"
+          }
+        }
+      },
+      "s3BucketWealthRaw": {
+        "Type": "AWS::S3::Bucket",
+        "Properties": {
+          "AccessControl": "BucketOwnerFullControl",
+          "PublicAccessBlockConfiguration": {
+            "BlockPublicAcls": true,
+            "BlockPublicPolicy": true,
+            "IgnorePublicAcls": true,
+            "RestrictPublicBuckets": true
+          },
+          "BucketName": {
+            "Fn::Sub": "${AWS::AccountId}-${AWS::Region}-datagov-wealthmanagement-raw"
+          }
+        }
+      },
+      "s3BucketPersonalRaw": {
+        "Type": "AWS::S3::Bucket",
+        "Properties": {
+          "AccessControl": "BucketOwnerFullControl",
+          "PublicAccessBlockConfiguration": {
+            "BlockPublicAcls": true,
+            "BlockPublicPolicy": true,
+            "IgnorePublicAcls": true,
+            "RestrictPublicBuckets": true
+          },
+          "BucketName": {
+            "Fn::Sub": "${AWS::AccountId}-${AWS::Region}-datagov-personalbanking-raw"
+          }
+        }
+      },
+      "s3BucketAthena": {
+        "Type": "AWS::S3::Bucket",
+        "Properties": {
+          "AccessControl": "BucketOwnerFullControl",
+          "PublicAccessBlockConfiguration": {
+            "BlockPublicAcls": true,
+            "BlockPublicPolicy": true,
+            "IgnorePublicAcls": true,
+            "RestrictPublicBuckets": true
+          },
+          "BucketName": {
+            "Fn::Sub": "${AWS::AccountId}-${AWS::Region}-datagov-athena"
+          }
+        }
+      },
+      "DataLakeResourcesInsCurated": {
+        "Type": "AWS::LakeFormation::Resource",
+        "Properties": {
+          "ResourceArn": {
+            "Fn::GetAtt": [
+              "s3BucketInsuranceCurated",
+              "Arn"
+            ]
+          },
+          "UseServiceLinkedRole": false,
+          "RoleArn": {
+            "Fn::GetAtt": [
+              "GlueExecutionRole",
+              "Arn"
+            ]
+          }
+        }
+      },
+      "DataLakeResourcesWealthCurated": {
+        "Type": "AWS::LakeFormation::Resource",
+        "Properties": {
+          "ResourceArn": {
+            "Fn::GetAtt": [
+              "s3BucketWealthCurated",
+              "Arn"
+            ]
+          },
+          "UseServiceLinkedRole": false,
+          "RoleArn": {
+            "Fn::GetAtt": [
+              "GlueExecutionRole",
+              "Arn"
+            ]
+          }
+        }
+      },
+      "DataLakeResourcesPersonalCurated": {
+        "Type": "AWS::LakeFormation::Resource",
+        "Properties": {
+          "ResourceArn": {
+            "Fn::GetAtt": [
+              "s3BucketPersonalCurated",
+              "Arn"
+            ]
+          },
+          "UseServiceLinkedRole": false,
+          "RoleArn": {
+            "Fn::GetAtt": [
+              "GlueExecutionRole",
+              "Arn"
+            ]
+          }
+        }
+      },
+      "DataLakeResourcesInsRaw": {
+        "Type": "AWS::LakeFormation::Resource",
+        "Properties": {
+          "ResourceArn": {
+            "Fn::GetAtt": [
+              "s3BucketInsuranceRaw",
+              "Arn"
+            ]
+          },
+          "UseServiceLinkedRole": false,
+          "RoleArn": {
+            "Fn::GetAtt": [
+              "GlueExecutionRole",
+              "Arn"
+            ]
+          }
+        }
+      },
+      "DataLakeResourcesWealthRaw": {
+        "Type": "AWS::LakeFormation::Resource",
+        "Properties": {
+          "ResourceArn": {
+            "Fn::GetAtt": [
+              "s3BucketWealthRaw",
+              "Arn"
+            ]
+          },
+          "UseServiceLinkedRole": false,
+          "RoleArn": {
+            "Fn::GetAtt": [
+              "GlueExecutionRole",
+              "Arn"
+            ]
+          }
+        }
+      },
+      "DataLakeResourcesPersonalRaw": {
+        "Type": "AWS::LakeFormation::Resource",
+        "Properties": {
+          "ResourceArn": {
+            "Fn::GetAtt": [
+              "s3BucketPersonalRaw",
+              "Arn"
+            ]
+          },
+          "UseServiceLinkedRole": false,
+          "RoleArn": {
+            "Fn::GetAtt": [
+              "GlueExecutionRole",
+              "Arn"
+            ]
+          }
+        }
+      },
+      "GlueExecutionRole": {
+        "Type": "AWS::IAM::Role",
+        "Properties": {
+          "RoleName": {
+            "Fn::Sub": "GlueExecutionRole"
+          },
+          "AssumeRolePolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Effect": "Allow",
+                "Principal": {
+                  "Service": [
+                    "glue.amazonaws.com"
+                  ]
+                },
+                "Action": [
+                  "sts:AssumeRole"
+                ]
+              },
+              {
+                "Effect": "Allow",
+                "Principal": {
+                  "Service": [
+                    "lakeformation.amazonaws.com"
+                  ]
+                },
+                "Action": [
+                  "sts:AssumeRole"
+                ]
+              },
+              {
+                "Effect": "Allow",
+                "Principal": {
+                  "Service": [
+                    "databrew.amazonaws.com"
+                  ]
+                },
+                "Action": [
+                  "sts:AssumeRole"
+                ]
+              }
+            ]
+          },
+          "ManagedPolicyArns": [
+            "arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole",
+            "arn:aws:iam::aws:policy/service-role/AWSGlueDataBrewServiceRole"
+          ],
+          "Policies": [
+            {
+              "PolicyName": "CWPolicy",
+              "PolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Sid": "VisualEditor0",
+                    "Effect": "Allow",
+                    "Action": "cloudwatch:PutMetricData",
+                    "Resource": "*"
+                  },
+                  {
+                    "Sid": "VisualEditor1",
+                    "Effect": "Allow",
+                    "Action": "logs:PutLogEvents",
+                    "Resource": {
+                      "Fn::Sub": "arn:aws:logs:*:${AWS::AccountId}:log-group:*:log-stream:*"
+                    }
+                  },
+                  {
+                    "Sid": "VisualEditor2",
+                    "Effect": "Allow",
+                    "Action": [
+                      "logs:CreateLogStream",
+                      "logs:CreateLogGroup"
+                    ],
+                    "Resource": {
+                      "Fn::Sub": "arn:aws:logs:*:${AWS::AccountId}:log-group:*"
+                    }
+                  },
+                  {
+                    "Sid": "VisualEditor3",
+                    "Effect": "Allow",
+                    "Action": "logs:AssociateKmsKey",
+                    "Resource": {
+                      "Fn::Sub": "arn:aws:logs:*:${AWS::AccountId}:log-group:*"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "PolicyName": "GluePolicy",
+              "PolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Sid": "lakeformationsid",
+                    "Effect": "Allow",
+                    "Action": [
+                      "lakeformation:GetDataAccess"
+                    ],
+                    "Resource": "*"
+                  },
+                  {
+                    "Sid": "s3sid",
+                    "Effect": "Allow",
+                    "Action": "S3:*",
+                    "Resource": [
+                      {
+                        "Fn::GetAtt": [
+                          "s3BucketInsuranceCurated",
+                          "Arn"
+                        ]
+                      },
+                      {
+                        "Fn::GetAtt": [
+                          "s3BucketWealthCurated",
+                          "Arn"
+                        ]
+                      },
+                      {
+                        "Fn::GetAtt": [
+                          "s3BucketPersonalCurated",
+                          "Arn"
+                        ]
+                      },
+                      {
+                        "Fn::GetAtt": [
+                          "s3BucketInsuranceRaw",
+                          "Arn"
+                        ]
+                      },
+                      {
+                        "Fn::GetAtt": [
+                          "s3BucketWealthRaw",
+                          "Arn"
+                        ]
+                      },
+                      {
+                        "Fn::GetAtt": [
+                          "s3BucketPersonalRaw",
+                          "Arn"
+                        ]
+                      },
+                      {
+                        "Fn::Join": [
+                          "",
+                          [
+                            {
+                              "Fn::GetAtt": [
+                                "s3BucketInsuranceRaw",
+                                "Arn"
+                              ]
+                            },
+                            "/*"
+                          ]
+                        ]
+                      },
+                      {
+                        "Fn::Join": [
+                          "",
+                          [
+                            {
+                              "Fn::GetAtt": [
+                                "s3BucketPersonalRaw",
+                                "Arn"
+                              ]
+                            },
+                            "/*"
+                          ]
+                        ]
+                      },
+                      {
+                        "Fn::Join": [
+                          "",
+                          [
+                            {
+                              "Fn::GetAtt": [
+                                "s3BucketWealthRaw",
+                                "Arn"
+                              ]
+                            },
+                            "/*"
+                          ]
+                        ]
+                      },
+                      {
+                        "Fn::Join": [
+                          "",
+                          [
+                            {
+                              "Fn::GetAtt": [
+                                "s3BucketInsuranceCurated",
+                                "Arn"
+                              ]
+                            },
+                            "/*"
+                          ]
+                        ]
+                      },
+                      {
+                        "Fn::Join": [
+                          "",
+                          [
+                            {
+                              "Fn::GetAtt": [
+                                "s3BucketPersonalCurated",
+                                "Arn"
+                              ]
+                            },
+                            "/*"
+                          ]
+                        ]
+                      },
+                      {
+                        "Fn::Join": [
+                          "",
+                          [
+                            {
+                              "Fn::GetAtt": [
+                                "s3BucketWealthCurated",
+                                "Arn"
+                              ]
+                            },
+                            "/*"
+                          ]
+                        ]
+                      },
+                      {
+                        "Fn::Join": [
+                          "",
+                          [
+                            {
+                              "Fn::GetAtt": [
+                                "s3BucketDQ",
+                                "Arn"
+                              ]
+                            },
+                            "/*"
+                          ]
+                        ]
+                      },
+                      {
+                        "Fn::Join": [
+                          "",
+                          [
+                            {
+                              "Fn::GetAtt": [
+                                "s3BucketDQ",
+                                "Arn"
+                              ]
+                            },
+                            ""
+                          ]
+                        ]
+                      },
+                      "arn:aws:s3:::ws-assets-prod-iad-r-iad-ed304a55c2ca1aee/*",
+                      "arn:aws:s3:::ws-assets-prod-iad-r-nrt-2cb4b4649d0e0f94/*",
+                      "arn:aws:s3:::ws-assets-prod-iad-r-icn-ced060f0d38bc0b0/*",
+                      "arn:aws:s3:::ws-assets-prod-iad-r-kix-c2a28ad4e55ea53a/*",
+                      "arn:aws:s3:::ws-assets-prod-iad-r-bom-431207042d319a2d/*",
+                      "arn:aws:s3:::ws-assets-prod-iad-r-sin-694a125e41645312/*",
+                      "arn:aws:s3:::ws-assets-prod-iad-r-syd-b04c62a5f16f7b2e/*",
+                      "arn:aws:s3:::ws-assets-prod-iad-r-fra-b129423e91500967/*",
+                      "arn:aws:s3:::ws-assets-prod-iad-r-yul-5c2977cd61bca1f3/*",
+                      "arn:aws:s3:::ws-assets-prod-iad-r-arn-580aeca3990cef5a/*",
+                      "arn:aws:s3:::ws-assets-prod-iad-r-dub-85e3be25bd827406/*",
+                      "arn:aws:s3:::ws-assets-prod-iad-r-lhr-cc4472a651221311/*",
+                      "arn:aws:s3:::ws-assets-prod-iad-r-cdg-9e76383c31ad6229/*",
+                      "arn:aws:s3:::ws-assets-prod-iad-r-gru-527b8c19222c1182/*",
+                      "arn:aws:s3:::ws-assets-prod-iad-r-cmh-8d6e9c21a4dec77d/*",
+                      "arn:aws:s3:::ws-assets-prod-iad-r-sfo-f61fc67057535f1b/*",
+                      "arn:aws:s3:::ws-assets-prod-iad-r-pdx-f3b3f9f1a7d6a3d0/*"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "PolicyName": "PassrolePolicy",
+              "PolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Sid": "VisualEditor0",
+                    "Effect": "Allow",
+                    "Action": "iam:PassRole",
+                    "Resource": "*"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "DomainAdmin": {
+        "Type": "AWS::IAM::Role",
+        "Properties": {
+          "AssumeRolePolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Effect": "Allow",
+                "Principal": {
+                  "AWS": [
+                    {
+                      "Ref": "ParticipantAssumedRoleArn"
+                    }
+                  ]
+                },
+                "Action": [
+                  "sts:AssumeRole"
+                ]
+              }
+            ]
+          },
+          "RoleName": "DomainAdmin",
+          "ManagedPolicyArns": [
+            "arn:aws:iam::aws:policy/AmazonS3FullAccess",
+            "arn:aws:iam::aws:policy/AmazonAthenaFullAccess",
+            "arn:aws:iam::aws:policy/AmazonDataZoneFullAccess"
+          ],
+          "Path": "/",
+          "Policies": []
+        }
+      },
+      "WealthMgntDataSteward": {
+        "Type": "AWS::IAM::Role",
+        "Properties": {
+          "AssumeRolePolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Effect": "Allow",
+                "Principal": {
+                  "AWS": [
+                    {
+                      "Ref": "ParticipantAssumedRoleArn"
+                    }
+                  ]
+                },
+                "Action": [
+                  "sts:AssumeRole"
+                ]
+              }
+            ]
+          },
+          "RoleName": "WealthMgntDataSteward",
+          "ManagedPolicyArns": [
+            "arn:aws:iam::aws:policy/AmazonS3FullAccess",
+            "arn:aws:iam::aws:policy/AmazonAthenaFullAccess",
+            "arn:aws:iam::aws:policy/AmazonDataZoneFullUserAccess"
+          ],
+          "Path": "/",
+          "Policies": []
+        }
+      },
+      "PersonalBankingDataSteward": {
+        "Type": "AWS::IAM::Role",
+        "Properties": {
+          "AssumeRolePolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Effect": "Allow",
+                "Principal": {
+                  "AWS": [
+                    {
+                      "Ref": "ParticipantAssumedRoleArn"
+                    }
+                  ]
+                },
+                "Action": [
+                  "sts:AssumeRole"
+                ]
+              }
+            ]
+          },
+          "RoleName": "PersonalBankingDataSteward",
+          "ManagedPolicyArns": [
+            "arn:aws:iam::aws:policy/AmazonS3FullAccess",
+            "arn:aws:iam::aws:policy/AmazonAthenaFullAccess",
+            "arn:aws:iam::aws:policy/AmazonDataZoneFullUserAccess"
+          ],
+          "Path": "/",
+          "Policies": []
+        }
+      },
+      "InsuranceDataSteward": {
+        "Type": "AWS::IAM::Role",
+        "Properties": {
+          "AssumeRolePolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Effect": "Allow",
+                "Principal": {
+                  "AWS": [
+                    {
+                      "Ref": "ParticipantAssumedRoleArn"
+                    }
+                  ]
+                },
+                "Action": [
+                  "sts:AssumeRole"
+                ]
+              }
+            ]
+          },
+          "RoleName": "InsuranceDataSteward",
+          "ManagedPolicyArns": [
+            "arn:aws:iam::aws:policy/AmazonS3FullAccess",
+            "arn:aws:iam::aws:policy/AmazonAthenaFullAccess",
+            "arn:aws:iam::aws:policy/AmazonDataZoneFullUserAccess"
+          ],
+          "Path": "/",
+          "Policies": []
+        }
+      },
+      "InsuranceMetadataSteward": {
+        "Type": "AWS::IAM::Role",
+        "Properties": {
+          "AssumeRolePolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Effect": "Allow",
+                "Principal": {
+                  "AWS": [
+                    {
+                      "Ref": "ParticipantAssumedRoleArn"
+                    }
+                  ]
+                },
+                "Action": [
+                  "sts:AssumeRole"
+                ]
+              }
+            ]
+          },
+          "RoleName": "InsuranceMetadataSteward",
+          "ManagedPolicyArns": [
+            "arn:aws:iam::aws:policy/AmazonS3FullAccess",
+            "arn:aws:iam::aws:policy/AmazonAthenaFullAccess",
+            "arn:aws:iam::aws:policy/AmazonDataZoneFullUserAccess"
+          ],
+          "Path": "/",
+          "Policies": []
+        }
+      },
+      "WealthMgntMetadataSteward": {
+        "Type": "AWS::IAM::Role",
+        "Properties": {
+          "AssumeRolePolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Effect": "Allow",
+                "Principal": {
+                  "AWS": [
+                    {
+                      "Ref": "ParticipantAssumedRoleArn"
+                    }
+                  ]
+                },
+                "Action": [
+                  "sts:AssumeRole"
+                ]
+              }
+            ]
+          },
+          "RoleName": "WealthMgntMetadataSteward",
+          "ManagedPolicyArns": [
+            "arn:aws:iam::aws:policy/AmazonS3FullAccess",
+            "arn:aws:iam::aws:policy/AmazonAthenaFullAccess",
+            "arn:aws:iam::aws:policy/AmazonDataZoneFullUserAccess"
+          ],
+          "Path": "/",
+          "Policies": []
+        }
+      },
+      "PersonalBankingMetadataSteward": {
+        "Type": "AWS::IAM::Role",
+        "Properties": {
+          "AssumeRolePolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Effect": "Allow",
+                "Principal": {
+                  "AWS": [
+                    {
+                      "Ref": "ParticipantAssumedRoleArn"
+                    }
+                  ]
+                },
+                "Action": [
+                  "sts:AssumeRole"
+                ]
+              }
+            ]
+          },
+          "RoleName": "PersonalBankingMetadataSteward",
+          "ManagedPolicyArns": [
+            "arn:aws:iam::aws:policy/AmazonS3FullAccess",
+            "arn:aws:iam::aws:policy/AmazonAthenaFullAccess",
+            "arn:aws:iam::aws:policy/AmazonDataZoneFullUserAccess"
+          ],
+          "Path": "/",
+          "Policies": []
+        }
+      },
+      "DomainMetadataSteward": {
+        "Type": "AWS::IAM::Role",
+        "Properties": {
+          "AssumeRolePolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Effect": "Allow",
+                "Principal": {
+                  "AWS": [
+                    {
+                      "Ref": "ParticipantAssumedRoleArn"
+                    }
+                  ]
+                },
+                "Action": [
+                  "sts:AssumeRole"
+                ]
+              }
+            ]
+          },
+          "RoleName": "DomainMetadataSteward",
+          "ManagedPolicyArns": [
+            "arn:aws:iam::aws:policy/AmazonS3FullAccess",
+            "arn:aws:iam::aws:policy/AmazonAthenaFullAccess",
+            "arn:aws:iam::aws:policy/AmazonDataZoneFullUserAccess"
+          ],
+          "Path": "/",
+          "Policies": []
+        }
+      },
+      "BusinessAnalyst": {
+        "Type": "AWS::IAM::Role",
+        "Properties": {
+          "AssumeRolePolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Effect": "Allow",
+                "Principal": {
+                  "AWS": [
+                    {
+                      "Ref": "ParticipantAssumedRoleArn"
+                    }
+                  ]
+                },
+                "Action": [
+                  "sts:AssumeRole"
+                ]
+              }
+            ]
+          },
+          "RoleName": "BusinessAnalyst",
+          "ManagedPolicyArns": [
+            "arn:aws:iam::aws:policy/AmazonS3FullAccess",
+            "arn:aws:iam::aws:policy/AmazonAthenaFullAccess",
+            "arn:aws:iam::aws:policy/AmazonDataZoneFullUserAccess"
+          ],
+          "Path": "/",
+          "Policies": []
+        }
+      },
+      "DataEngineer": {
+        "Type": "AWS::IAM::Role",
+        "Properties": {
+          "AssumeRolePolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Effect": "Allow",
+                "Principal": {
+                  "AWS": [
+                    {
+                      "Ref": "ParticipantAssumedRoleArn"
+                    }
+                  ]
+                },
+                "Action": [
+                  "sts:AssumeRole"
+                ]
+              }
+            ]
+          },
+          "RoleName": "DataEngineer",
+          "ManagedPolicyArns": [
+            "arn:aws:iam::aws:policy/AmazonS3FullAccess",
+            "arn:aws:iam::aws:policy/AmazonAthenaFullAccess",
+            "arn:aws:iam::aws:policy/AmazonDataZoneFullAccess",
+            "arn:aws:iam::aws:policy/AWSGlueConsoleFullAccess"
+          ],
+          "Path": "/",
+          "Policies": []
+        }
+      },
+      "AmazonAthenaLakeFormationWorkgroup": {
+        "DependsOn": "s3BucketAthena",
+        "Type": "AWS::Athena::WorkGroup",
+        "Properties": {
+          "Description": "A workgroup for Lake Formation",
+          "Name": "AmazonAthenaLakeFormation",
+          "RecursiveDeleteOption": true,
+          "State": "ENABLED",
+          "WorkGroupConfiguration": {
+            "EnforceWorkGroupConfiguration": true,
+            "PublishCloudWatchMetricsEnabled": true,
+            "RequesterPaysEnabled": false,
+            "ResultConfiguration": {
+              "OutputLocation": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "s3://",
+                    {
+                      "Ref": "s3BucketAthena"
+                    }
+                  ]
+                ]
+              }
+            }
+          }
+        }
+      },
+      "GlueDatabaseDataQuality": {
+        "Type": "AWS::Glue::Database",
+        "Properties": {
+          "CatalogId": {
+            "Ref": "AWS::AccountId"
+          },
+          "DatabaseInput": {
+            "Name": "dataquality_results",
+            "Description": "Database for data quality results",
+            "LocationUri": {
+              "Fn::Join": [
+                "",
+                [
+                  "s3://",
+                  {
+                    "Ref": "s3BucketDQ"
+                  }
+                ]
+              ]
+            }
+          }
+        }
+      },
+      "CustomerDQResultsTable": {
+        "Type": "AWS::Glue::Table",
+        "DependsOn": [
+          "GlueDatabaseDataQuality",
+          "DqDatabasePermissionsWSSystemRole"
+        ],
+        "Properties": {
+          "CatalogId": {
+            "Ref": "AWS::AccountId"
+          },
+          "DatabaseName": "dataquality_results",
+          "TableInput": {
+            "Description": "Customers Raw Data Quality Results",
+            "Name": "customers_dq_failedrecords",
+            "Parameters": {
+              "CrawlerSchemaSerializerVersion": "1.0",
+              "compressionType": "none",
+              "CrawlerSchemaDeserializerVersion": "1.0",
+              "classification": "json",
+              "typeOfData": "file"
+            },
+            "StorageDescriptor": {
+              "Columns": [
+                {
+                  "Name": "dataqualityevaluationresult",
+                  "Type": "string"
+                },
+                {
+                  "Name": "phone_number",
+                  "Type": "string"
+                },
+                {
+                  "Name": "dataqualityrulesskip",
+                  "Type": "array<string>"
+                },
+                {
+                  "Name": "address",
+                  "Type": "string"
+                },
+                {
+                  "Name": "dataqualityrulesfail",
+                  "Type": "array<string>"
+                },
+                {
+                  "Name": "customer_id",
+                  "Type": "int"
+                },
+                {
+                  "Name": "dataqualityrulespass",
+                  "Type": "array<string>"
+                },
+                {
+                  "Name": "name",
+                  "Type": "string"
+                },
+                {
+                  "Name": "education_level",
+                  "Type": "string"
+                },
+                {
+                  "Name": "age",
+                  "Type": "int"
+                },
+                {
+                  "Name": "gender",
+                  "Type": "string"
+                },
+                {
+                  "Name": "email",
+                  "Type": "string"
+                },
+                {
+                  "Name": "date_of_birth",
+                  "Type": "string"
+                },
+                {
+                  "Name": "marital_status",
+                  "Type": "string"
+                },
+                {
+                  "Name": "income_category",
+                  "Type": "string"
+                }
+              ],
+              "Location": {
+                "Fn::Sub": "s3://${AWS::AccountId}-${AWS::Region}-datagov-dq/customers_dq_failedrecords/"
+              },
+              "InputFormat": "org.apache.hadoop.mapred.TextInputFormat",
+              "OutputFormat": "org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat",
+              "Compressed": false,
+              "SerdeInfo": {
+                "SerializationLibrary": "org.openx.data.jsonserde.JsonSerDe",
+                "Parameters": {
+                  "paths": "DataQualityEvaluationResult,DataQualityRulesFail,DataQualityRulesPass,DataQualityRulesSkip,address,age,customer_id,date_of_birth,education_level,email,gender,income_category,marital_status,name,phone_number"
+                }
+              },
+              "BucketColumns": [],
+              "SortColumns": [],
+              "Parameters": {
+                "CrawlerSchemaSerializerVersion": "1.0",
+                "compressionType": "none",
+                "CrawlerSchemaDeserializerVersion": "1.0",
+                "classification": "json",
+                "typeOfData": "file"
+              },
+              "StoredAsSubDirectories": false
+            },
+            "TableType": "EXTERNAL_TABLE"
+          }
+        }
+      },
+      "GlueDatabaseInsuranceRaw": {
+        "Type": "AWS::Glue::Database",
+        "Properties": {
+          "CatalogId": {
+            "Ref": "AWS::AccountId"
+          },
+          "DatabaseInput": {
+            "Name": "insurance_raw",
+            "Description": "Database for raw insurance data",
+            "LocationUri": {
+              "Fn::Join": [
+                "",
+                [
+                  "s3://",
+                  {
+                    "Ref": "s3BucketInsuranceRaw"
+                  }
+                ]
+              ]
+            }
+          }
+        }
+      },
+      "StageDatabasePermissionsInsRawParticpant": {
+        "Type": "AWS::LakeFormation::Permissions",
+        "DependsOn": "GlueDatabaseInsuranceRaw",
+        "Properties": {
+          "DataLakePrincipal": {
+            "DataLakePrincipalIdentifier": {
+              "Ref": "ParticipantAssumedRoleArn"
+            }
+          },
+          "Permissions": [
+            "ALL"
+          ],
+          "PermissionsWithGrantOption": [
+            "ALL"
+          ],
+          "Resource": {
+            "DatabaseResource": {
+              "Name": "insurance_raw"
+            }
+          }
+        }
+      },
+      "StageDatabasePermissionsWealthRawParticpant": {
+        "Type": "AWS::LakeFormation::Permissions",
+        "DependsOn": "GlueDatabaseWealthRaw",
+        "Properties": {
+          "DataLakePrincipal": {
+            "DataLakePrincipalIdentifier": {
+              "Ref": "ParticipantAssumedRoleArn"
+            }
+          },
+          "Permissions": [
+            "ALL"
+          ],
+          "PermissionsWithGrantOption": [
+            "ALL"
+          ],
+          "Resource": {
+            "DatabaseResource": {
+              "Name": "wealthmgmt_raw"
+            }
+          }
+        }
+      },
+      "StageDatabasePermissionsPersonalRawParticpant": {
+        "Type": "AWS::LakeFormation::Permissions",
+        "DependsOn": "GlueDatabasePersonalRaw",
+        "Properties": {
+          "DataLakePrincipal": {
+            "DataLakePrincipalIdentifier": {
+              "Ref": "ParticipantAssumedRoleArn"
+            }
+          },
+          "Permissions": [
+            "ALL"
+          ],
+          "PermissionsWithGrantOption": [
+            "ALL"
+          ],
+          "Resource": {
+            "DatabaseResource": {
+              "Name": "personalbanking_raw"
+            }
+          }
+        }
+      },
+      "StageDatabasePermissionsInsCuratedParticpant": {
+        "Type": "AWS::LakeFormation::Permissions",
+        "DependsOn": "GlueDatabaseInsuranceCurated",
+        "Properties": {
+          "DataLakePrincipal": {
+            "DataLakePrincipalIdentifier": {
+              "Ref": "ParticipantAssumedRoleArn"
+            }
+          },
+          "Permissions": [
+            "ALL"
+          ],
+          "PermissionsWithGrantOption": [
+            "ALL"
+          ],
+          "Resource": {
+            "DatabaseResource": {
+              "Name": "insurance_curated"
+            }
+          }
+        }
+      },
+      "StageDatabasePermissionsWealthCuratedParticpant": {
+        "Type": "AWS::LakeFormation::Permissions",
+        "DependsOn": "GlueDatabaseWealthCurated",
+        "Properties": {
+          "DataLakePrincipal": {
+            "DataLakePrincipalIdentifier": {
+              "Ref": "ParticipantAssumedRoleArn"
+            }
+          },
+          "Permissions": [
+            "ALL"
+          ],
+          "PermissionsWithGrantOption": [
+            "ALL"
+          ],
+          "Resource": {
+            "DatabaseResource": {
+              "Name": "wealthmgmt_curated"
+            }
+          }
+        }
+      },
+      "StageDatabasePermissionsPersonalCuratedParticpant": {
+        "Type": "AWS::LakeFormation::Permissions",
+        "DependsOn": "GlueDatabasePersonalCurated",
+        "Properties": {
+          "DataLakePrincipal": {
+            "DataLakePrincipalIdentifier": {
+              "Ref": "ParticipantAssumedRoleArn"
+            }
+          },
+          "Permissions": [
+            "ALL"
+          ],
+          "PermissionsWithGrantOption": [
+            "ALL"
+          ],
+          "Resource": {
+            "DatabaseResource": {
+              "Name": "personalbanking_curated"
+            }
+          }
+        }
+      },
+      "DqDatabasePermissionsParticpant": {
+        "Type": "AWS::LakeFormation::Permissions",
+        "DependsOn": "GlueDatabaseDataQuality",
+        "Properties": {
+          "DataLakePrincipal": {
+            "DataLakePrincipalIdentifier": {
+              "Ref": "ParticipantAssumedRoleArn"
+            }
+          },
+          "Permissions": [
+            "ALL"
+          ],
+          "PermissionsWithGrantOption": [
+            "ALL"
+          ],
+          "Resource": {
+            "DatabaseResource": {
+              "Name": "dataquality_results"
+            }
+          }
+        }
+      },
+      "DqDatabasePermissionsWSSystemRole": {
+        "Type": "AWS::LakeFormation::Permissions",
+        "DependsOn": "GlueDatabaseDataQuality",
+        "Condition": "WSAccount",
+        "Properties": {
+          "DataLakePrincipal": {
+            "DataLakePrincipalIdentifier": {
+              "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/WSSystemRole"
+            }
+          },
+          "Permissions": [
+            "ALL"
+          ],
+          "PermissionsWithGrantOption": [
+            "ALL"
+          ],
+          "Resource": {
+            "DatabaseResource": {
+              "Name": "dataquality_results"
+            }
+          }
+        }
+      },
+      "StageDatabasePermissionsInsRawGlueEx": {
+        "Type": "AWS::LakeFormation::Permissions",
+        "DependsOn": "GlueDatabaseInsuranceRaw",
+        "Properties": {
+          "DataLakePrincipal": {
+            "DataLakePrincipalIdentifier": {
+              "Fn::GetAtt": [
+                "GlueExecutionRole",
+                "Arn"
+              ]
+            }
+          },
+          "Permissions": [
+            "ALL"
+          ],
+          "PermissionsWithGrantOption": [],
+          "Resource": {
+            "DatabaseResource": {
+              "Name": "insurance_raw"
+            }
+          }
+        }
+      },
+      "StageDatabasePermissionsWealthRawGlueEx": {
+        "Type": "AWS::LakeFormation::Permissions",
+        "DependsOn": "GlueDatabaseWealthRaw",
+        "Properties": {
+          "DataLakePrincipal": {
+            "DataLakePrincipalIdentifier": {
+              "Fn::GetAtt": [
+                "GlueExecutionRole",
+                "Arn"
+              ]
+            }
+          },
+          "Permissions": [
+            "ALL"
+          ],
+          "PermissionsWithGrantOption": [
+            "ALL"
+          ],
+          "Resource": {
+            "DatabaseResource": {
+              "Name": "wealthmgmt_raw"
+            }
+          }
+        }
+      },
+      "StageDatabasePermissionsPersonalRawGlueEx": {
+        "Type": "AWS::LakeFormation::Permissions",
+        "DependsOn": "GlueDatabasePersonalRaw",
+        "Properties": {
+          "DataLakePrincipal": {
+            "DataLakePrincipalIdentifier": {
+              "Fn::GetAtt": [
+                "GlueExecutionRole",
+                "Arn"
+              ]
+            }
+          },
+          "Permissions": [
+            "ALL"
+          ],
+          "PermissionsWithGrantOption": [
+            "ALL"
+          ],
+          "Resource": {
+            "DatabaseResource": {
+              "Name": "personalbanking_raw"
+            }
+          }
+        }
+      },
+      "StageDatabasePermissionsInsCuratedGlueEx": {
+        "Type": "AWS::LakeFormation::Permissions",
+        "DependsOn": "GlueDatabaseInsuranceCurated",
+        "Properties": {
+          "DataLakePrincipal": {
+            "DataLakePrincipalIdentifier": {
+              "Fn::GetAtt": [
+                "GlueExecutionRole",
+                "Arn"
+              ]
+            }
+          },
+          "Permissions": [
+            "ALL"
+          ],
+          "PermissionsWithGrantOption": [
+            "ALL"
+          ],
+          "Resource": {
+            "DatabaseResource": {
+              "Name": "insurance_curated"
+            }
+          }
+        }
+      },
+      "StageDatabasePermissionsWealthCuratedGlueEx": {
+        "Type": "AWS::LakeFormation::Permissions",
+        "DependsOn": "GlueDatabaseWealthCurated",
+        "Properties": {
+          "DataLakePrincipal": {
+            "DataLakePrincipalIdentifier": {
+              "Fn::GetAtt": [
+                "GlueExecutionRole",
+                "Arn"
+              ]
+            }
+          },
+          "Permissions": [
+            "ALL"
+          ],
+          "PermissionsWithGrantOption": [
+            "ALL"
+          ],
+          "Resource": {
+            "DatabaseResource": {
+              "Name": "wealthmgmt_curated"
+            }
+          }
+        }
+      },
+      "StageDatabasePermissionsPersonalCuratedGlueEx": {
+        "Type": "AWS::LakeFormation::Permissions",
+        "DependsOn": "GlueDatabasePersonalCurated",
+        "Properties": {
+          "DataLakePrincipal": {
+            "DataLakePrincipalIdentifier": {
+              "Fn::GetAtt": [
+                "GlueExecutionRole",
+                "Arn"
+              ]
+            }
+          },
+          "Permissions": [
+            "ALL"
+          ],
+          "PermissionsWithGrantOption": [
+            "ALL"
+          ],
+          "Resource": {
+            "DatabaseResource": {
+              "Name": "personalbanking_curated"
+            }
+          }
+        }
+      },
+      "DatabasePermissionsDQGlueEx": {
+        "Type": "AWS::LakeFormation::Permissions",
+        "DependsOn": "GlueDatabaseDataQuality",
+        "Properties": {
+          "DataLakePrincipal": {
+            "DataLakePrincipalIdentifier": {
+              "Fn::GetAtt": [
+                "GlueExecutionRole",
+                "Arn"
+              ]
+            }
+          },
+          "Permissions": [
+            "ALL"
+          ],
+          "PermissionsWithGrantOption": [
+            "ALL"
+          ],
+          "Resource": {
+            "DatabaseResource": {
+              "Name": "dataquality_results"
+            }
+          }
+        }
+      },
+      "DatabasePermissionsDQGlueExTables": {
+        "Type": "AWS::LakeFormation::Permissions",
+        "DependsOn": "GlueDatabaseDataQuality",
+        "Properties": {
+          "DataLakePrincipal": {
+            "DataLakePrincipalIdentifier": {
+              "Fn::GetAtt": [
+                "GlueExecutionRole",
+                "Arn"
+              ]
+            }
+          },
+          "Permissions": [
+            "ALL"
+          ],
+          "PermissionsWithGrantOption": [
+            "ALL"
+          ],
+          "Resource": {
+            "TableResource": {
+              "DatabaseName": "dataquality_results",
+              "TableWildcard": {}
+            }
+          }
+        }
+      },
+      "DatabasePermissionsDQParticipantTables": {
+        "Type": "AWS::LakeFormation::Permissions",
+        "DependsOn": "GlueDatabaseDataQuality",
+        "Properties": {
+          "DataLakePrincipal": {
+            "DataLakePrincipalIdentifier": {
+              "Ref": "ParticipantAssumedRoleArn"
+            }
+          },
+          "Permissions": [
+            "ALL"
+          ],
+          "PermissionsWithGrantOption": [
+            "ALL"
+          ],
+          "Resource": {
+            "TableResource": {
+              "DatabaseName": "dataquality_results",
+              "TableWildcard": {}
+            }
+          }
+        }
+      },
+      "DatabasePermissionsPersonalBankingTables": {
+        "Type": "AWS::LakeFormation::Permissions",
+        "DependsOn": "GlueDatabasePersonalCurated",
+        "Properties": {
+          "DataLakePrincipal": {
+            "DataLakePrincipalIdentifier": {
+              "Ref": "ParticipantAssumedRoleArn"
+            }
+          },
+          "Permissions": [
+            "ALL"
+          ],
+          "PermissionsWithGrantOption": [
+            "ALL"
+          ],
+          "Resource": {
+            "TableResource": {
+              "DatabaseName": "personalbanking_curated",
+              "TableWildcard": {}
+            }
+          }
+        }
+      },
+      "GlueDatabaseWealthRaw": {
+        "Type": "AWS::Glue::Database",
+        "Properties": {
+          "CatalogId": {
+            "Ref": "AWS::AccountId"
+          },
+          "DatabaseInput": {
+            "Name": "wealthmgmt_raw",
+            "Description": "Database for raw wealth management data",
+            "LocationUri": {
+              "Fn::Join": [
+                "",
+                [
+                  "s3://",
+                  {
+                    "Ref": "s3BucketWealthRaw"
+                  }
+                ]
+              ]
+            }
+          }
+        }
+      },
+      "GlueDatabasePersonalRaw": {
+        "Type": "AWS::Glue::Database",
+        "Properties": {
+          "CatalogId": {
+            "Ref": "AWS::AccountId"
+          },
+          "DatabaseInput": {
+            "Name": "personalbanking_raw",
+            "Description": "Database for raw personal banking data",
+            "LocationUri": {
+              "Fn::Join": [
+                "",
+                [
+                  "s3://",
+                  {
+                    "Ref": "s3BucketPersonalRaw"
+                  }
+                ]
+              ]
+            }
+          }
+        }
+      },
+      "GlueDatabaseInsuranceCurated": {
+        "Type": "AWS::Glue::Database",
+        "Properties": {
+          "CatalogId": {
+            "Ref": "AWS::AccountId"
+          },
+          "DatabaseInput": {
+            "Name": "insurance_curated",
+            "Description": "Database for curated insurance data",
+            "LocationUri": {
+              "Fn::Join": [
+                "",
+                [
+                  "s3://",
+                  {
+                    "Ref": "s3BucketInsuranceCurated"
+                  }
+                ]
+              ]
+            }
+          }
+        }
+      },
+      "GlueDatabaseWealthCurated": {
+        "Type": "AWS::Glue::Database",
+        "Properties": {
+          "CatalogId": {
+            "Ref": "AWS::AccountId"
+          },
+          "DatabaseInput": {
+            "Name": "wealthmgmt_curated",
+            "Description": "Database for curated wealth management data",
+            "LocationUri": {
+              "Fn::Join": [
+                "",
+                [
+                  "s3://",
+                  {
+                    "Ref": "s3BucketWealthCurated"
+                  }
+                ]
+              ]
+            }
+          }
+        }
+      },
+      "GlueDatabasePersonalCurated": {
+        "Type": "AWS::Glue::Database",
+        "Properties": {
+          "CatalogId": {
+            "Ref": "AWS::AccountId"
+          },
+          "DatabaseInput": {
+            "Name": "personalbanking_curated",
+            "Description": "Database for curated personal banking data",
+            "LocationUri": {
+              "Fn::Join": [
+                "",
+                [
+                  "s3://",
+                  {
+                    "Ref": "s3BucketPersonalCurated"
+                  }
+                ]
+              ]
+            }
+          }
+        }
+      },
+      "DomainExecutionRole": {
+        "Type": "AWS::IAM::Role",
+        "Properties": {
+          "RoleName": "DataZoneDomainExecutionRole",
+          "AssumeRolePolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Effect": "Allow",
+                "Principal": {
+                  "Service": [
+                    "datazone.amazonaws.com"
+                  ]
+                },
+                "Action": [
+                  "sts:AssumeRole",
+                  "sts:TagSession"
+                ],
+                "Condition": {
+                  "StringEquals": {
+                    "aws:SourceAccount": {
+                      "Fn::Sub": "${AWS::AccountId}"
+                    }
+                  },
+                  "ForAllValues:StringLike": {
+                    "aws:TagKeys": "datazone*"
+                  }
+                }
+              }
+            ]
+          },
+          "Path": "/",
+          "ManagedPolicyArns": [
+            "arn:aws:iam::aws:policy/service-role/AmazonDataZoneDomainExecutionRolePolicy"
+          ]
+        }
+      },
+      "ProvisioningRole": {
+        "Type": "AWS::IAM::Role",
+        "Properties": {
+          "RoleName": "DataZoneProvisioningRole",
+          "AssumeRolePolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Effect": "Allow",
+                "Principal": {
+                  "Service": [
+                    "datazone.amazonaws.com"
+                  ]
+                },
+                "Action": "sts:AssumeRole",
+                "Condition": {
+                  "StringEquals": {
+                    "aws:SourceAccount": {
+                      "Fn::Sub": "${AWS::AccountId}"
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          "Path": "/",
+          "ManagedPolicyArns": [
+            "arn:aws:iam::aws:policy/AmazonDataZoneRedshiftGlueProvisioningPolicy"
+          ]
+        }
+      },
+      "ManageAccessRole": {
+        "Type": "AWS::IAM::Role",
+        "Properties": {
+          "RoleName": "DataZoneGlueManageAccessRole",
+          "AssumeRolePolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Effect": "Allow",
+                "Principal": {
+                  "Service": [
+                    "datazone.amazonaws.com"
+                  ]
+                },
+                "Action": "sts:AssumeRole",
+                "Condition": {
+                  "StringEquals": {
+                    "aws:SourceAccount": {
+                      "Fn::Sub": "${AWS::AccountId}"
+                    }
+                  },
+                  "ArnLike": {
+                    "aws:SourceArn": {
+                      "Fn::Sub": "arn:aws:datazone:${AWS::Region}:${AWS::AccountId}:domain/*"
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          "Path": "/",
+          "ManagedPolicyArns": [
+            "arn:aws:iam::aws:policy/service-role/AmazonDataZoneGlueManageAccessRolePolicy"
+          ]
+        }
+      },
+      "StepFunctionsRole": {
+        "Type": "AWS::IAM::Role",
+        "Properties": {
+          "RoleName": "StepFunctionsExecutionRole",
+          "AssumeRolePolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Effect": "Allow",
+                "Principal": {
+                  "Service": [
+                    "states.amazonaws.com"
+                  ]
+                },
+                "Action": [
+                  "sts:AssumeRole"
+                ]
+              }
+            ]
+          },
+          "Policies": [
+            {
+              "PolicyName": "StepFunctions",
+              "PolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Sid": "VisualEditor0",
+                    "Effect": "Allow",
+                    "Action": [
+                      "states:StartExecution",
+                      "states:StartSyncExecution"
+                    ],
+                    "Resource": {
+                      "Fn::Sub": "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:*"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "PolicyName": "CloudWatch",
+              "PolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Effect": "Allow",
+                    "Action": [
+                      "logs:CreateLogDelivery",
+                      "logs:GetLogDelivery",
+                      "logs:UpdateLogDelivery",
+                      "logs:DeleteLogDelivery",
+                      "logs:ListLogDeliveries",
+                      "logs:PutResourcePolicy",
+                      "logs:DescribeResourcePolicies",
+                      "logs:DescribeLogGroups"
+                    ],
+                    "Resource": "*"
+                  }
+                ]
+              }
+            },
+            {
+              "PolicyName": "EventBridge",
+              "PolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Sid": "VisualEditor0",
+                    "Effect": "Allow",
+                    "Action": [
+                      "events:PutTargets",
+                      "events:DescribeRule",
+                      "events:PutRule"
+                    ],
+                    "Resource": {
+                      "Fn::Sub": "arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/*/*"
+                    }
+                  },
+                  {
+                    "Sid": "VisualEditor1",
+                    "Effect": "Allow",
+                    "Action": [
+                      "events:PutTargets",
+                      "events:DescribeRule",
+                      "events:PutRule"
+                    ],
+                    "Resource": {
+                      "Fn::Sub": "arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/*"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "PolicyName": "XRay",
+              "PolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Effect": "Allow",
+                    "Action": [
+                      "xray:PutTraceSegments",
+                      "xray:PutTelemetryRecords",
+                      "xray:GetSamplingRules",
+                      "xray:GetSamplingTargets"
+                    ],
+                    "Resource": [
+                      "*"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "PolicyName": "LakeFormation",
+              "PolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Effect": "Allow",
+                    "Action": [
+                      "lakeformation:GetEffectivePermissionsForPath",
+                      "lakeformation:BatchGrantPermissions",
+                      "lakeformation:SearchDatabasesByLFTags",
+                      "glue:GetJobs",
+                      "lakeformation:SearchTablesByLFTags",
+                      "lakeformation:GetWorkUnits",
+                      "lakeformation:ListLFTags",
+                      "lakeformation:GetWorkUnitResults",
+                      "lakeformation:GetLFTag",
+                      "lakeformation:GetQueryState",
+                      "lakeformation:BatchRevokePermissions",
+                      "lakeformation:GetResourceLFTags",
+                      "lakeformation:DescribeResource",
+                      "lakeformation:GrantPermissions",
+                      "lakeformation:GetQueryStatistics",
+                      "lakeformation:GetadataLakeSettings",
+                      "lakeformation:GetTableObjects",
+                      "lakeformation:PutDataLakeSettings",
+                      "lakeformation:RevokePermissions",
+                      "lakeformation:DescribeTransaction"
+                    ],
+                    "Resource": [
+                      "*"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "PolicyName": "Glue",
+              "PolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Sid": "VisualEditor0",
+                    "Effect": "Allow",
+                    "Action": [
+                      "glue:SearchTables",
+                      "glue:UpdateDatabase",
+                      "glue:CreateTable",
+                      "glue:DeleteDatabase",
+                      "glue:GetTables",
+                      "glue:GetTableVersions",
+                      "glue:UpdateTable",
+                      "glue:DeleteTable",
+                      "glue:Getadatabases",
+                      "glue:GetTable",
+                      "glue:Getadatabase",
+                      "glue:GetTableVersion",
+                      "glue:CreateDatabase"
+                    ],
+                    "Resource": [
+                      {
+                        "Fn::Sub": "arn:aws:glue:*:${AWS::AccountId}:database/*"
+                      },
+                      {
+                        "Fn::Sub": "arn:aws:glue:*:${AWS::AccountId}:catalog"
+                      },
+                      {
+                        "Fn::Sub": "arn:aws:glue:*:${AWS::AccountId}:table/*/*"
+                      }
+                    ]
+                  },
+                  {
+                    "Sid": "VisualEditor1",
+                    "Effect": "Allow",
+                    "Action": [
+                      "glue:SearchTables",
+                      "glue:UpdateDatabase",
+                      "glue:CreateTable",
+                      "glue:DeleteDatabase",
+                      "glue:GetTables",
+                      "glue:GetTableVersions",
+                      "glue:UpdateTable",
+                      "glue:DeleteTable",
+                      "glue:Getadatabases",
+                      "glue:GetTable",
+                      "glue:Getadatabase",
+                      "glue:GetTableVersion",
+                      "glue:CreateDatabase"
+                    ],
+                    "Resource": [
+                      {
+                        "Fn::Sub": "arn:aws:glue:*:${AWS::AccountId}:database/*"
+                      },
+                      {
+                        "Fn::Sub": "arn:aws:glue:*:${AWS::AccountId}:table/*"
+                      }
+                    ]
+                  },
+                  {
+                    "Sid": "VisualEditor2",
+                    "Effect": "Allow",
+                    "Action": [
+                      "glue:GetCrawler",
+                      "glue:StartCrawler"
+                    ],
+                    "Resource": {
+                      "Fn::Sub": "arn:aws:glue:${AWS::Region}:${AWS::AccountId}:crawler/*"
+                    }
+                  },
+                  {
+                    "Sid": "VisualEditor3",
+                    "Effect": "Allow",
+                    "Action": [
+                      "glue:GetCrawlers",
+                      "glue:GetJobs",
+                      "glue:ListCrawlers",
+                      "glue:ListCrawls",
+                      "glue:ListJobs"
+                    ],
+                    "Resource": "*"
+                  },
+                  {
+                    "Sid": "VisualEditor4",
+                    "Effect": "Allow",
+                    "Action": [
+                      "glue:StartJobRun",
+                      "glue:GetJobRun",
+                      "glue:GetJobRuns",
+                      "glue:GetJob"
+                    ],
+                    "Resource": {
+                      "Fn::Sub": "arn:aws:glue:${AWS::Region}:${AWS::AccountId}:job/*"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "LambdaExecutionRole": {
+        "Type": "AWS::IAM::Role",
+        "Properties": {
+          "RoleName": "LambdaExecutionRole",
+          "AssumeRolePolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Effect": "Allow",
+                "Principal": {
+                  "Service": [
+                    "lambda.amazonaws.com"
+                  ]
+                },
+                "Action": [
+                  "sts:AssumeRole"
+                ]
+              }
+            ]
+          },
+          "ManagedPolicyArns": [
+            "arn:aws:iam::aws:policy/AmazonS3FullAccess",
+            "arn:aws:iam::aws:policy/AmazonDataZoneFullAccess"
+          ],
+          "Policies": [
+            {
+              "PolicyName": "CloudWatchInline",
+              "PolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Sid": "",
+                    "Effect": "Allow",
+                    "Action": [
+                      "logs:CreateLogGroup",
+                      "logs:CreateLogStream",
+                      "logs:PutLogEvents"
+                    ],
+                    "Resource": [
+                      {
+                        "Fn::Sub": "arn:aws:logs:*:${AWS::AccountId}:*"
+                      }
+                    ]
+                  },
+                  {
+                    "Effect": "Allow",
+                    "Action": [
+                      "logs:CreateLogStream",
+                      "logs:PutLogEvents"
+                    ],
+                    "Resource": [
+                      {
+                        "Fn::Sub": "arn:aws:logs:*:${AWS::AccountId}:log-group:*:*"
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "PolicyName": "LambdaInline",
+              "PolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Sid": "VisualEditor0",
+                    "Effect": "Allow",
+                    "Action": [
+                      "lambda:InvokeFunction",
+                      "lambda:GetFunction"
+                    ],
+                    "Resource": {
+                      "Fn::Sub": "arn:aws:lambda:*:${AWS::AccountId}:function:*"
+                    }
+                  },
+                  {
+                    "Sid": "VisualEditor1",
+                    "Effect": "Allow",
+                    "Action": "lambda:ListFunctions",
+                    "Resource": "*"
+                  }
+                ]
+              }
+            },
+            {
+              "PolicyName": "StepFunctionsInline",
+              "PolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Sid": "VisualEditor0",
+                    "Effect": "Allow",
+                    "Action": [
+                      "states:StartExecution"
+                    ],
+                    "Resource": [
+                      {
+                        "Fn::Sub": "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:*"
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "PolicyName": "GlueInline",
+              "PolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Sid": "VisualEditor0",
+                    "Effect": "Allow",
+                    "Action": [
+                      "glue:GetJobRuns"
+                    ],
+                    "Resource": [
+                      {
+                        "Fn::Sub": "arn:aws:glue:${AWS::Region}:${AWS::AccountId}:job/*"
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "PolicyName": "DataZoneInline",
+              "PolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Sid": "VisualEditor0",
+                    "Effect": "Allow",
+                    "Action": [
+                      "datazone:ListDomains",
+                      "datazone:ListProjects",
+                      "datazone:PostLineageEvent"
+                    ],
+                    "Resource": "*"
+                  }
+                ]
+              }
+            }
+          ],
+          "Path": "/"
+        }
+      },
+      "CSVclassifier": {
+        "Type": "AWS::Glue::Classifier",
+        "Properties": {
+          "CsvClassifier": {
+            "AllowSingleColumn": true,
+            "ContainsHeader": "PRESENT",
+            "Delimiter": ",",
+            "Name": "csvclassifier",
+            "QuoteSymbol": "\""
+          }
+        }
+      },
+      "GlueCrawlerInsuranceRaw": {
+        "Type": "AWS::Glue::Crawler",
+        "DependsOn": "GlueExecutionRole",
+        "Properties": {
+          "DatabaseName": {
+            "Ref": "GlueDatabaseInsuranceRaw"
+          },
+          "Description": "Crawler for raw insurance data",
+          "Name": "crawler-insurance-raw",
+          "Role": {
+            "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/GlueExecutionRole"
+          },
+          "TablePrefix": "raw_",
+          "Targets": {
+            "S3Targets": [
+              {
+                "Path": {
+                  "Fn::Sub": "s3://${AWS::AccountId}-${AWS::Region}-datagov-insurance-raw"
+                }
+              }
+            ]
+          }
+        }
+      },
+      "GlueCrawlerWealthRaw": {
+        "Type": "AWS::Glue::Crawler",
+        "DependsOn": "GlueExecutionRole",
+        "Properties": {
+          "DatabaseName": {
+            "Ref": "GlueDatabaseWealthRaw"
+          },
+          "Description": "Crawler for raw wealth management data",
+          "Name": "crawler-wealthmgnt-raw",
+          "Role": {
+            "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/GlueExecutionRole"
+          },
+          "TablePrefix": "raw_",
+          "Targets": {
+            "S3Targets": [
+              {
+                "Path": {
+                  "Fn::Sub": "s3://${AWS::AccountId}-${AWS::Region}-datagov-wealthmanagement-raw"
+                }
+              }
+            ]
+          }
+        }
+      },
+      "GlueCrawlerPersonalRaw": {
+        "Type": "AWS::Glue::Crawler",
+        "DependsOn": "GlueExecutionRole",
+        "Properties": {
+          "Classifiers": [
+            {
+              "Ref": "CSVclassifier"
+            }
+          ],
+          "DatabaseName": {
+            "Ref": "GlueDatabasePersonalRaw"
+          },
+          "Description": "Crawler for raw personal banking data",
+          "Name": "crawler-personalbanking-raw",
+          "Role": {
+            "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/GlueExecutionRole"
+          },
+          "TablePrefix": "raw_",
+          "Targets": {
+            "S3Targets": [
+              {
+                "Path": {
+                  "Fn::Sub": "s3://${AWS::AccountId}-${AWS::Region}-datagov-personalbanking-raw"
+                }
+              }
+            ]
+          }
+        }
+      },
+      "GlueCrawlerInsuranceCurated": {
+        "Type": "AWS::Glue::Crawler",
+        "DependsOn": "GlueExecutionRole",
+        "Properties": {
+          "DatabaseName": {
+            "Ref": "GlueDatabaseInsuranceCurated"
+          },
+          "Description": "Crawler for curated insurance data",
+          "Name": "crawler-insurance-curated",
+          "Role": {
+            "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/GlueExecutionRole"
+          },
+          "Targets": {
+            "S3Targets": [
+              {
+                "Path": {
+                  "Fn::Sub": "s3://${AWS::AccountId}-${AWS::Region}-datagov-insurance-curated"
+                }
+              }
+            ]
+          }
+        }
+      },
+      "GlueCrawlerWealthCurated": {
+        "Type": "AWS::Glue::Crawler",
+        "DependsOn": "GlueExecutionRole",
+        "Properties": {
+          "DatabaseName": {
+            "Ref": "GlueDatabaseWealthCurated"
+          },
+          "Description": "Crawler for curated wealth management data",
+          "Name": "crawler-wealthmgnt-curated",
+          "Role": {
+            "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/GlueExecutionRole"
+          },
+          "Targets": {
+            "S3Targets": [
+              {
+                "Path": {
+                  "Fn::Sub": "s3://${AWS::AccountId}-${AWS::Region}-datagov-wealthmanagement-curated"
+                }
+              }
+            ]
+          }
+        }
+      },
+      "GlueCrawlerPersonalCurated": {
+        "Type": "AWS::Glue::Crawler",
+        "DependsOn": "GlueExecutionRole",
+        "Properties": {
+          "DatabaseName": {
+            "Ref": "GlueDatabasePersonalCurated"
+          },
+          "Description": "Crawler for curated personal banking data",
+          "Name": "crawler-personalbanking-curated",
+          "Role": {
+            "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/GlueExecutionRole"
+          },
+          "Targets": {
+            "S3Targets": [
+              {
+                "Path": {
+                  "Fn::Sub": "s3://${AWS::AccountId}-${AWS::Region}-datagov-personalbanking-curated"
+                }
+              }
+            ]
+          }
+        }
+      },
+      "VPC": {
+        "Type": "AWS::EC2::VPC",
+        "Properties": {
+          "CidrBlock": "10.0.0.0/20",
+          "EnableDnsSupport": "true",
+          "EnableDnsHostnames": "true",
+          "Tags": [
+            {
+              "Key": "Application",
+              "Value": {
+                "Ref": "AWS::StackId"
+              }
+            },
+            {
+              "Key": "Name",
+              "Value": "DatabaseVPC"
+            }
+          ]
+        }
+      },
+      "DBPrivateSubnet1": {
+        "Type": "AWS::EC2::Subnet",
+        "Properties": {
+          "VpcId": {
+            "Ref": "VPC"
+          },
+          "CidrBlock": "10.0.0.0/24",
+          "AvailabilityZone": {
+            "Fn::Select": [
+              "0",
+              {
+                "Fn::GetAZs": ""
+              }
+            ]
+          },
+          "Tags": [
+            {
+              "Key": "Application",
+              "Value": {
+                "Ref": "AWS::StackId"
+              }
+            }
+          ]
+        }
+      },
+      "DBPrivateSubnet2": {
+        "Type": "AWS::EC2::Subnet",
+        "Properties": {
+          "VpcId": {
+            "Ref": "VPC"
+          },
+          "CidrBlock": "10.0.1.0/24",
+          "AvailabilityZone": {
+            "Fn::Select": [
+              "1",
+              {
+                "Fn::GetAZs": ""
+              }
+            ]
+          },
+          "Tags": [
+            {
+              "Key": "Application",
+              "Value": {
+                "Ref": "AWS::StackId"
+              }
+            }
+          ]
+        }
+      },
+      "DBPrivateSubnet3": {
+        "Type": "AWS::EC2::Subnet",
+        "Properties": {
+          "VpcId": {
+            "Ref": "VPC"
+          },
+          "CidrBlock": "10.0.2.0/24",
+          "AvailabilityZone": {
+            "Fn::Select": [
+              "2",
+              {
+                "Fn::GetAZs": ""
+              }
+            ]
+          },
+          "Tags": [
+            {
+              "Key": "Application",
+              "Value": {
+                "Ref": "AWS::StackId"
+              }
+            }
+          ]
+        }
+      },
+      "DBPublicSubnet1": {
+        "Type": "AWS::EC2::Subnet",
+        "Properties": {
+          "VpcId": {
+            "Ref": "VPC"
+          },
+          "CidrBlock": "10.0.3.0/24",
+          "AvailabilityZone": {
+            "Fn::Select": [
+              "0",
+              {
+                "Fn::GetAZs": ""
+              }
+            ]
+          },
+          "Tags": [
+            {
+              "Key": "Application",
+              "Value": {
+                "Ref": "AWS::StackId"
+              }
+            }
+          ]
+        }
+      },
+      "DBPublicSubnet2": {
+        "Type": "AWS::EC2::Subnet",
+        "Properties": {
+          "VpcId": {
+            "Ref": "VPC"
+          },
+          "CidrBlock": "10.0.4.0/24",
+          "AvailabilityZone": {
+            "Fn::Select": [
+              "1",
+              {
+                "Fn::GetAZs": ""
+              }
+            ]
+          },
+          "Tags": [
+            {
+              "Key": "Application",
+              "Value": {
+                "Ref": "AWS::StackId"
+              }
+            }
+          ]
+        }
+      },
+      "DBPublicSubnet3": {
+        "Type": "AWS::EC2::Subnet",
+        "Properties": {
+          "VpcId": {
+            "Ref": "VPC"
+          },
+          "CidrBlock": "10.0.5.0/24",
+          "AvailabilityZone": {
+            "Fn::Select": [
+              "2",
+              {
+                "Fn::GetAZs": ""
+              }
+            ]
+          },
+          "Tags": [
+            {
+              "Key": "Application",
+              "Value": {
+                "Ref": "AWS::StackId"
+              }
+            }
+          ]
+        }
+      },
+      "InternetGateway": {
+        "Type": "AWS::EC2::InternetGateway",
+        "Properties": {
+          "Tags": [
+            {
+              "Key": "Application",
+              "Value": {
+                "Ref": "AWS::StackId"
+              }
+            }
+          ]
+        }
+      },
+      "AttachGateway": {
+        "Type": "AWS::EC2::VPCGatewayAttachment",
+        "Properties": {
+          "VpcId": {
+            "Ref": "VPC"
+          },
+          "InternetGatewayId": {
+            "Ref": "InternetGateway"
+          }
+        }
+      },
+      "PublicRouteTable": {
+        "Type": "AWS::EC2::RouteTable",
+        "Properties": {
+          "VpcId": {
+            "Ref": "VPC"
+          },
+          "Tags": [
+            {
+              "Key": "Application",
+              "Value": {
+                "Ref": "AWS::StackId"
+              }
+            }
+          ]
+        }
+      },
+      "PrivateRouteTable1": {
+        "Type": "AWS::EC2::RouteTable",
+        "Properties": {
+          "VpcId": {
+            "Ref": "VPC"
+          },
+          "Tags": [
+            {
+              "Key": "Application",
+              "Value": {
+                "Ref": "AWS::StackId"
+              }
+            }
+          ]
+        }
+      },
+      "PrivateRouteTable2": {
+        "Type": "AWS::EC2::RouteTable",
+        "Properties": {
+          "VpcId": {
+            "Ref": "VPC"
+          },
+          "Tags": [
+            {
+              "Key": "Application",
+              "Value": {
+                "Ref": "AWS::StackId"
+              }
+            }
+          ]
+        }
+      },
+      "PrivateRouteTable3": {
+        "Type": "AWS::EC2::RouteTable",
+        "Properties": {
+          "VpcId": {
+            "Ref": "VPC"
+          },
+          "Tags": [
+            {
+              "Key": "Application",
+              "Value": {
+                "Ref": "AWS::StackId"
+              }
+            }
+          ]
+        }
+      },
+      "gatewayRoute": {
+        "Type": "AWS::EC2::Route",
+        "DependsOn": "AttachGateway",
+        "Properties": {
+          "RouteTableId": {
+            "Ref": "PublicRouteTable"
+          },
+          "DestinationCidrBlock": "0.0.0.0/0",
+          "GatewayId": {
+            "Ref": "InternetGateway"
+          }
+        }
+      },
+      "SubnetPublicRouteTableAssociation1": {
+        "Type": "AWS::EC2::SubnetRouteTableAssociation",
+        "Properties": {
+          "SubnetId": {
+            "Ref": "DBPublicSubnet1"
+          },
+          "RouteTableId": {
+            "Ref": "PublicRouteTable"
+          }
+        }
+      },
+      "SubnetPublicRouteTableAssociation2": {
+        "Type": "AWS::EC2::SubnetRouteTableAssociation",
+        "Properties": {
+          "SubnetId": {
+            "Ref": "DBPublicSubnet2"
+          },
+          "RouteTableId": {
+            "Ref": "PublicRouteTable"
+          }
+        }
+      },
+      "SubnetPublicRouteTableAssociation3": {
+        "Type": "AWS::EC2::SubnetRouteTableAssociation",
+        "Properties": {
+          "SubnetId": {
+            "Ref": "DBPublicSubnet3"
+          },
+          "RouteTableId": {
+            "Ref": "PublicRouteTable"
+          }
+        }
+      },
+      "SubnetPrivateRouteTableAssociation1": {
+        "Type": "AWS::EC2::SubnetRouteTableAssociation",
+        "Properties": {
+          "SubnetId": {
+            "Ref": "DBPrivateSubnet1"
+          },
+          "RouteTableId": {
+            "Ref": "PrivateRouteTable1"
+          }
+        }
+      },
+      "SubnetPrivateRouteTableAssociation2": {
+        "Type": "AWS::EC2::SubnetRouteTableAssociation",
+        "Properties": {
+          "SubnetId": {
+            "Ref": "DBPrivateSubnet2"
+          },
+          "RouteTableId": {
+            "Ref": "PrivateRouteTable2"
+          }
+        }
+      },
+      "SubnetPrivateRouteTableAssociation3": {
+        "Type": "AWS::EC2::SubnetRouteTableAssociation",
+        "Properties": {
+          "SubnetId": {
+            "Ref": "DBPrivateSubnet3"
+          },
+          "RouteTableId": {
+            "Ref": "PrivateRouteTable3"
+          }
+        }
+      },
+      "EIP1": {
+        "DependsOn": "AttachGateway",
+        "Type": "AWS::EC2::EIP",
+        "Properties": {
+          "Domain": "vpc"
+        }
+      },
+      "EIP2": {
+        "DependsOn": "AttachGateway",
+        "Type": "AWS::EC2::EIP",
+        "Properties": {
+          "Domain": "vpc"
+        }
+      },
+      "NATGateway1": {
+        "Type": "AWS::EC2::NatGateway",
+        "Properties": {
+          "AllocationId": {
+            "Fn::GetAtt": [
+              "EIP1",
+              "AllocationId"
+            ]
+          },
+          "SubnetId": {
+            "Ref": "DBPublicSubnet1"
+          },
+          "Tags": []
+        }
+      },
+      "NATGateway2": {
+        "Type": "AWS::EC2::NatGateway",
+        "Properties": {
+          "AllocationId": {
+            "Fn::GetAtt": [
+              "EIP2",
+              "AllocationId"
+            ]
+          },
+          "SubnetId": {
+            "Ref": "DBPublicSubnet2"
+          },
+          "Tags": []
+        }
+      },
+      "NatRoute1": {
+        "Type": "AWS::EC2::Route",
+        "Properties": {
+          "RouteTableId": {
+            "Ref": "PrivateRouteTable1"
+          },
+          "DestinationCidrBlock": "0.0.0.0/0",
+          "NatGatewayId": {
+            "Ref": "NATGateway1"
+          }
+        }
+      },
+      "NatRoute2": {
+        "Type": "AWS::EC2::Route",
+        "Properties": {
+          "RouteTableId": {
+            "Ref": "PrivateRouteTable2"
+          },
+          "DestinationCidrBlock": "0.0.0.0/0",
+          "NatGatewayId": {
+            "Ref": "NATGateway2"
+          }
+        }
+      },
+      "NatRoute3": {
+        "Type": "AWS::EC2::Route",
+        "Properties": {
+          "RouteTableId": {
+            "Ref": "PrivateRouteTable3"
+          },
+          "DestinationCidrBlock": "0.0.0.0/0",
+          "NatGatewayId": {
+            "Ref": "NATGateway2"
+          }
+        }
+      },
+      "RedshiftExecutionRole": {
+        "Type": "AWS::IAM::Role",
+        "Properties": {
+          "AssumeRolePolicyDocument": {
+            "Statement": [
+              {
+                "Action": [
+                  "sts:AssumeRole"
+                ],
+                "Effect": "Allow",
+                "Principal": {
+                  "Service": [
+                    "redshift.amazonaws.com"
+                  ]
+                }
+              }
+            ],
+            "Version": "2012-10-17"
+          },
+          "Path": "/",
+          "ManagedPolicyArns": [
+            "arn:aws:iam::aws:policy/AWSGlueConsoleFullAccess",
+            "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess",
+            "arn:aws:iam::aws:policy/AWSLakeFormationDataAdmin"
+          ],
+          "Policies": [
+            {
+              "PolicyName": "CustomS3Policy",
+              "PolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Sid": "VisualEditor0",
+                    "Effect": "Allow",
+                    "Action": [
+                      "s3:PutObject",
+                      "s3:GetObject"
+                    ],
+                    "Resource": [
+                      {
+                        "Fn::Sub": "arn:aws:s3:::${AWS::AccountId}-${AWS::Region}-datagov-wealthmanagement-curated"
+                      },
+                      {
+                        "Fn::Sub": "arn:aws:s3:::${AWS::AccountId}-${AWS::Region}-datagov-wealthmanagement-raw"
+                      },
+                      {
+                        "Fn::Sub": "arn:aws:s3:::${AWS::AccountId}-${AWS::Region}-datagov-insurance-curated"
+                      },
+                      {
+                        "Fn::Sub": "arn:aws:s3:::${AWS::AccountId}-${AWS::Region}-datagov-insurance-raw"
+                      },
+                      {
+                        "Fn::Sub": "arn:aws:s3:::${AWS::AccountId}-${AWS::Region}-datagov-personalbanking-curated"
+                      },
+                      {
+                        "Fn::Sub": "arn:aws:s3:::${AWS::AccountId}-${AWS::Region}-datagov-personalbanking-raw"
+                      },
+                      {
+                        "Fn::Sub": "arn:aws:s3:::${AWS::AccountId}-${AWS::Region}-datagov-wealthmanagement-curated/*"
+                      },
+                      {
+                        "Fn::Sub": "arn:aws:s3:::${AWS::AccountId}-${AWS::Region}-datagov-wealthmanagement-raw/*"
+                      },
+                      {
+                        "Fn::Sub": "arn:aws:s3:::${AWS::AccountId}-${AWS::Region}-datagov-insurance-curated/*"
+                      },
+                      {
+                        "Fn::Sub": "arn:aws:s3:::${AWS::AccountId}-${AWS::Region}-datagov-insurance-raw/*"
+                      },
+                      {
+                        "Fn::Sub": "arn:aws:s3:::${AWS::AccountId}-${AWS::Region}-datagov-personalbanking-curated/*"
+                      },
+                      {
+                        "Fn::Sub": "arn:aws:s3:::${AWS::AccountId}-${AWS::Region}-datagov-personalbanking-raw/*"
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "PolicyName": "SecretsPolicy",
+              "PolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Sid": "VisualEditor1",
+                    "Effect": "Allow",
+                    "Action": [
+                      "secretsmanager:GetRandomPassword",
+                      "secretsmanager:ListSecrets"
+                    ],
+                    "Resource": "*"
+                  }
+                ]
+              }
+            }
+          ],
+          "RoleName": "RedshiftExecutionRole"
+        }
+      },
+      "RedshiftServerlessNamespaceInsurance": {
+        "Type": "AWS::RedshiftServerless::Namespace",
+        "DependsOn": [
+          "RedshiftExecutionRole"
+        ],
+        "Properties": {
+          "AdminUsername": "admin",
+          "AdminUserPassword": {
+            "Ref": "DefaultPassword"
+          },
+          "DbName": "dev",
+          "NamespaceName": "insurance-warehouse",
+          "IamRoles": [
+            {
+              "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/RedshiftExecutionRole"
+            }
+          ],
+          "LogExports": [
+            "userlog",
+            "connectionlog",
+            "useractivitylog"
+          ]
+        }
+      },
+      "RedshiftServerlessWorkgroupInsurance": {
+        "Type": "AWS::RedshiftServerless::Workgroup",
+        "Properties": {
+          "WorkgroupName": "insurance-workgroup",
+          "NamespaceName": "insurance-warehouse",
+          "BaseCapacity": "128",
+          "PubliclyAccessible": false,
+          "SubnetIds": [
+            {
+              "Ref": "DBPrivateSubnet1"
+            },
+            {
+              "Ref": "DBPrivateSubnet2"
+            },
+            {
+              "Ref": "DBPrivateSubnet3"
+            }
+          ],
+          "SecurityGroupIds": [
+            {
+              "Ref": "redshiftSecurityGroup"
+            }
+          ],
+          "EnhancedVpcRouting": false
+        },
+        "DependsOn": [
+          "RedshiftServerlessNamespaceInsurance"
+        ]
+      },
+      "RedshiftServerlessNamespaceWealth": {
+        "Type": "AWS::RedshiftServerless::Namespace",
+        "DependsOn": [
+          "RedshiftExecutionRole"
+        ],
+        "Properties": {
+          "AdminUsername": "admin",
+          "AdminUserPassword": {
+            "Ref": "DefaultPassword"
+          },
+          "DbName": "dev",
+          "NamespaceName": "wealthmngment-warehouse",
+          "IamRoles": [
+            {
+              "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/RedshiftExecutionRole"
+            }
+          ],
+          "LogExports": [
+            "userlog",
+            "connectionlog",
+            "useractivitylog"
+          ]
+        }
+      },
+      "RedshiftServerlessWorkgroupWealth": {
+        "Type": "AWS::RedshiftServerless::Workgroup",
+        "Properties": {
+          "WorkgroupName": "wealthmngment-workgroup",
+          "NamespaceName": "wealthmngment-warehouse",
+          "BaseCapacity": "128",
+          "PubliclyAccessible": false,
+          "SubnetIds": [
+            {
+              "Ref": "DBPrivateSubnet1"
+            },
+            {
+              "Ref": "DBPrivateSubnet2"
+            },
+            {
+              "Ref": "DBPrivateSubnet3"
+            }
+          ],
+          "SecurityGroupIds": [
+            {
+              "Ref": "redshiftSecurityGroup"
+            }
+          ],
+          "EnhancedVpcRouting": false
+        },
+        "DependsOn": [
+          "RedshiftServerlessNamespaceWealth"
+        ]
+      },
+      "RedshiftServerlessNamespacePersonal": {
+        "Type": "AWS::RedshiftServerless::Namespace",
+        "DependsOn": [
+          "RedshiftExecutionRole"
+        ],
+        "Properties": {
+          "AdminUsername": "admin",
+          "AdminUserPassword": {
+            "Ref": "DefaultPassword"
+          },
+          "DbName": "dev",
+          "NamespaceName": "personalbanking-warehouse",
+          "IamRoles": [
+            {
+              "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/RedshiftExecutionRole"
+            }
+          ],
+          "LogExports": [
+            "userlog",
+            "connectionlog",
+            "useractivitylog"
+          ]
+        }
+      },
+      "RedshiftServerlessWorkgroupPersonal": {
+        "Type": "AWS::RedshiftServerless::Workgroup",
+        "Properties": {
+          "WorkgroupName": "personalbanking-workgroup",
+          "NamespaceName": "personalbanking-warehouse",
+          "BaseCapacity": "128",
+          "PubliclyAccessible": false,
+          "SubnetIds": [
+            {
+              "Ref": "DBPrivateSubnet1"
+            },
+            {
+              "Ref": "DBPrivateSubnet2"
+            },
+            {
+              "Ref": "DBPrivateSubnet3"
+            }
+          ],
+          "SecurityGroupIds": [
+            {
+              "Ref": "redshiftSecurityGroup"
+            }
+          ],
+          "EnhancedVpcRouting": false
+        },
+        "DependsOn": [
+          "RedshiftServerlessNamespacePersonal"
+        ]
+      },
+      "redshiftSecurityGroup": {
+        "Type": "AWS::EC2::SecurityGroup",
+        "Properties": {
+          "GroupDescription": "Security group for Redshift cluster",
+          "GroupName": "Redshift Security Group",
+          "VpcId": {
+            "Ref": "VPC"
+          },
+          "SecurityGroupIngress": [
+            {
+              "IpProtocol": "tcp",
+              "FromPort": "5439",
+              "ToPort": "5439",
+              "CidrIp": "0.0.0.0/0"
+            }
+          ],
+          "SecurityGroupEgress": [
+            {
+              "IpProtocol": "tcp",
+              "FromPort": "3306",
+              "ToPort": "3306",
+              "CidrIp": "0.0.0.0/0"
+            }
+          ]
+        }
+      },
+      "LoadDataCustomResource": {
+        "Type": "Custom::S3CustomResource",
+        "DependsOn": [
+          "AWSLambdaFunction",
+          "PersonalETLJob",
+          "WealthETLJob",
+          "InsuranceETLJob",
+          "InitCrawlerStateMachine",
+          "InitStateMachine",
+          "GlueCrawlerInsuranceRaw",
+          "GlueCrawlerWealthRaw",
+          "GlueCrawlerPersonalRaw"
+        ],
+        "Properties": {
+          "ServiceToken": {
+            "Fn::GetAtt": [
+              "AWSLambdaFunction",
+              "Arn"
+            ]
+          },
+          "ServiceTimeout": 360,
+          "data_source_bucket": "ws-assets-prod-iad-r-arn-580aeca3990cef5a",
+          "data_source_prefix": "1bf9302a-862c-4e21-9e45-c81fa055643b",
+          "target_bucket_personal_raw": {
+            "Ref": "s3BucketPersonalRaw"
+          },
+          "target_bucket_wealth_raw": {
+            "Ref": "s3BucketWealthRaw"
+          },
+          "target_bucket_insurance_raw": {
+            "Ref": "s3BucketInsuranceRaw"
+          },
+          "target_bucket_personal_curated": {
+            "Ref": "s3BucketPersonalCurated"
+          },
+          "target_bucket_wealth_curated": {
+            "Ref": "s3BucketWealthCurated"
+          },
+          "target_bucket_insurance_curated": {
+            "Ref": "s3BucketInsuranceCurated"
+          },
+          "version": {
+            "Ref": "Version"
+          },
+          "region": {
+            "Fn::Sub": "${AWS::Region}"
+          },
+          "accountId": {
+            "Fn::Sub": "${AWS::AccountId}"
+          }
+        }
+      },
+      "AWSLambdaFunction": {
+        "Type": "AWS::Lambda::Function",
+        "Properties": {
+          "Description": {
+            "Fn::Sub": "Load data to buckets"
+          },
+          "FunctionName": {
+            "Fn::Sub": "DatalakeInit-${AWS::Region}-loaddatafunction"
+          },
+          "Handler": "index.lambda_handler",
+          "Role": {
+            "Fn::GetAtt": [
+              "LambdaExecutionRole",
+              "Arn"
+            ]
+          },
+          "Timeout": 360,
+          "Runtime": "python3.12",
+          "Code": {
+            "ZipFile": "#MIT No Attribution\n\n#Copyright 2023 Amazon.com, Inc. or its affiliates.\n\n#Permission is hereby granted, free of charge, to any person obtaining a copy of this\n#software and associated documentation files (the \"Software\"), to deal in the Software\n#without restriction, including without limitation the rights to use, copy, modify,\n#merge, publish, distribute, sublicense, and/or sell copies of the Software, and to\n#permit persons to whom the Software is furnished to do so.\n\n#THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,\n#INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A\n#PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT\n#HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\n#OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE\n#SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\nimport json\nimport boto3\nimport cfnresponse\ns_3 = boto3.client('s3')\nstepfn = boto3.client('stepfunctions')\n\ndef lambda_handler(event, context):\n    requestType = event['RequestType']\n    print('The event request is: ', str(event))\n    response_data = {}\n    data_source_bucket = event['ResourceProperties']['data_source_bucket']\n    data_source_prefix = event['ResourceProperties']['data_source_prefix']\n    target_bucket_personal_raw = event['ResourceProperties']['target_bucket_personal_raw']\n    target_bucket_wealth_raw = event['ResourceProperties']['target_bucket_wealth_raw']\n    target_bucket_insurance_raw = event['ResourceProperties']['target_bucket_insurance_raw']\n    target_bucket_personal_curated = event['ResourceProperties']['target_bucket_personal_curated']\n    target_bucket_wealth_curated = event['ResourceProperties']['target_bucket_wealth_curated']\n    target_bucket_insurance_curated = event['ResourceProperties']['target_bucket_insurance_curated']\n    version = event['ResourceProperties']['version']\n    accountID = event['ResourceProperties']['accountId']\n    region = event['ResourceProperties']['region']\n    try:\n        if requestType in ('Create', 'Update'):\n            print('Creating or updating S3 content...')\n            for objname in ['appointments','claims','insurance_plans','policies','policy_holders','providers']:\n                copy_source = {'Bucket': data_source_bucket,'Key':  data_source_prefix +'/' +version +'/data/insurance/'+objname+'.csv'}\n                dest_object_key=objname+'/'+objname+'.csv'\n                s_3.copy_object( CopySource=copy_source, Bucket=target_bucket_insurance_raw, Key=dest_object_key )\n            for objname in ['accounts','credit_cards','customers','investments','loans','transactions']:\n                copy_source = {'Bucket': data_source_bucket,'Key':  data_source_prefix +'/' +version +'/data/personal/'+objname+'.csv'}\n                dest_object_key=objname+'/'+objname+'.csv'\n                s_3.copy_object( CopySource=copy_source, Bucket=target_bucket_personal_raw, Key=dest_object_key ) \n            for objname in ['accounts','advisors','clients','investments','loans','transactions']:\n                copy_source = {'Bucket': data_source_bucket,'Key':  data_source_prefix +'/' +version +'/data/wealth/'+objname+'.csv'}\n                dest_object_key=objname+'/'+objname+'.csv'\n                s_3.copy_object( CopySource=copy_source, Bucket=target_bucket_wealth_raw, Key=dest_object_key )\n        elif requestType == 'Delete':\n            print('Deleting S3 content...')\n            b_operator = boto3.resource('s3')\n            b_operator.Bucket(str(target_bucket_personal_raw)).objects.all().delete()\n            b_operator.Bucket(str(target_bucket_wealth_raw)).objects.all().delete()\n            b_operator.Bucket(str(target_bucket_insurance_raw)).objects.all().delete()\n            b_operator.Bucket(str(target_bucket_personal_curated)).objects.all().delete()\n            b_operator.Bucket(str(target_bucket_wealth_curated)).objects.all().delete()\n            b_operator.Bucket(str(target_bucket_insurance_curated)).objects.all().delete()\n    # Everything OK... send the signal back\n        print('Execution succesful!')\n        stepfn.start_execution(stateMachineArn=f'arn:aws:states:{region}:{accountID}:stateMachine:Init', input='{}')\n        cfnresponse.send(event,\n                        context,\n                        cfnresponse.SUCCESS,\n                        response_data)\n    except Exception as e:\n        print('Execution failed...')\n        print(str(e))\n        response_data['Data'] = str(e)\n        cfnresponse.send(event,\n                        context,\n                        cfnresponse.FAILED,\n                        response_data)    \n"
+          }
+        }
+      },
+      "AWSLambdaFunctionPushLineage": {
+        "Type": "AWS::Lambda::Function",
+        "Properties": {
+          "Description": {
+            "Fn::Sub": "Push lineage to datazone"
+          },
+          "FunctionName": {
+            "Fn::Sub": "pushlineage"
+          },
+          "Handler": "index.lambda_handler",
+          "Role": {
+            "Fn::GetAtt": [
+              "LambdaExecutionRole",
+              "Arn"
+            ]
+          },
+          "Timeout": 360,
+          "Runtime": "python3.12",
+          "Code": {
+            "ZipFile": "#MIT No Attribution\n\n#Copyright 2023 Amazon.com, Inc. or its affiliates.\n\n#Permission is hereby granted, free of charge, to any person obtaining a copy of this\n#software and associated documentation files (the \"Software\"), to deal in the Software\n#without restriction, including without limitation the rights to use, copy, modify,\n#merge, publish, distribute, sublicense, and/or sell copies of the Software, and to\n#permit persons to whom the Software is furnished to do so.\n\n#THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,\n#INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A\n#PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT\n#HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\n#OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE\n#SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\n\nimport boto3\nimport json\nimport uuid  \nfrom datetime import datetime\nimport time\nimport os\n\n\ndef lambda_handler(event, context):\n    # Create a DataZone client\n\n    datazone = boto3.client('datazone')\n    accountid = context.invoked_function_arn.split(\":\")[4]\n    region = os.environ['AWS_REGION']\n    glue = boto3.client('glue')\n\n    # Generate a new UUID for the run\n    run_id = str(uuid.uuid4())\n\n    # Your DataZone domain and project identifiers\n    \n    list_domains_response = datazone.list_domains()\n    for domain in list_domains_response[\"items\"]:\n        if domain[\"name\"] == \"CorporateDomain\":\n            domain_id =domain[\"id\"]\n    list_projects_response = datazone.list_projects(\n        domainIdentifier=domain_id\n    )\n    for project in list_projects_response[\"items\"]:\n        if project[\"name\"] == \"Personal Banking Data Products\":\n            project_id =project[\"id\"]\n\n    # get job runs\n    get_job_runs_response = glue.get_job_runs(\n        JobName=\"Curate_Customers\"\n    )\n    for run in get_job_runs_response[\"JobRuns\"]:\n        # OpenLineage metadata with column names in lowercase\n        \n        CompletedOn = run[\"CompletedOn\"]\n        lineage_data = {\n            \"eventType\": \"COMPLETE\",\n            \"eventTime\":  CompletedOn.strftime(\"%Y-%m-%dT%H:%M:%Sz\"),\n            \"run\": {\n                \"runId\": run_id,  # Generate a new UUID for each run\n                \"facets\":{\n                    \"environment-properties\":{\n                        \"_producer\":\"https://github.com/OpenLineage/OpenLineage/tree/1.9.1/integration/spark\",\n                        \"_schemaURL\":\"https://openlineage.io/spec/2-0-2/OpenLineage.json#/$defs/RunFacet\",\n                        \"environment-properties\":{\n                            \"GLUE_VERSION\":\"3.0\",\n                            \"GLUE_COMMAND_CRITERIA\":\"glueetl\",\n                            \"GLUE_PYTHON_VERSION\":\"3\"\n                        }\n                    }\n                }\n            },\n            \"job\": {\n                \"namespace\": f\"{domain_id}.{project_id}\",\n                \"name\": \"Curate_Customers\",\n                \"facets\":{\n                    \"jobType\":{\n                        \"_producer\":\"https://github.com/OpenLineage/OpenLineage/tree/1.9.1/integration/glue\",\n                        \"_schemaURL\":\"https://openlineage.io/spec/facets/2-0-2/JobTypeJobFacet.json#/$defs/JobTypeJobFacet\",\n                        \"processingType\":\"BATCH\",\n                        \"integration\":\"glue\",\n                        \"jobType\":\"JOB\"\n                    }\n                }\n            },\n            \"outputs\": [\n                {\n                    \"namespace\": f\"{domain_id}.{project_id}\",\n                    \"name\": f\"s3://{accountid}-{region}-datagov-personalbanking-curated/customers/\",\n                    \"facets\":{\n                        \"symlinks\":{\n                            \"_producer\":\"https://github.com/OpenLineage/OpenLineage/tree/1.9.1/integration/spark\",\n                            \"_schemaURL\":\"https://openlineage.io/spec/facets/1-0-0/SymlinksDatasetFacet.json#/$defs/SymlinksDatasetFacet\",\n                            \"identifiers\":[\n                                {\n                                    \"namespace\":f\"s3://{accountid}-{region}-datagov-personalbanking-curated/customers/\",\n                                    \"name\":\"personalbanking_curated.customers\",\n                                    \"type\":\"TABLE\"\n                                }\n                            ]\n                        }\n                    }      \n                }\n            ],\n            \"producer\": \"https://github.com/OpenLineage/OpenLineage/tree/1.9.1/integration/glue\",\n            \"schemaURL\": \"https://openlineage.io/spec/1-0-2/OpenLineage.json#/definitions/RunEvent\"\n        }\n        # Post the lineage event\n\n        print(f\"lineage data: {lineage_data}\")\n        try:\n            # Post the lineage event\n            post_response = datazone.post_lineage_event(\n                domainIdentifier=domain_id,\n                clientToken=run_id,\n                event=json.dumps(lineage_data, default=str)\n            )\n            print(f\"Lineage event posted successfully: {post_response}\")\n        \n        except Exception as e:\n            print(f\"Error: {e}\")\n            return {\n                'statusCode': 500,\n                'body': json.dumps(f'Error: {str(e)}')\n            }\n    return {\n        'statusCode': 200,\n        'body': json.dumps({\n            'message': 'Lineage event posted successfully'\n        })\n    }"
+          }
+        }
+      },
+      "PersonalETLJob": {
+        "Type": "AWS::Glue::Job",
+        "DependsOn": [
+          "GlueExecutionRole"
+        ],
+        "Properties": {
+          "Command": {
+            "Name": "glueetl",
+            "ScriptLocation": {
+              "Fn::Join": [
+                "",
+                [
+                  "s3://",
+                  {
+                    "Fn::FindInMap": [
+                      "RegionMap",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      "SourceBucketName"
+                    ]
+                  },
+                  "/1bf9302a-862c-4e21-9e45-c81fa055643b/",
+                  {
+                    "Ref": "Version"
+                  },
+                  "/scripts/Personal ETL.py"
+                ]
+              ]
+            }
+          },
+          "JobMode": "VISUAL",
+          "DefaultArguments": {
+            "--region": {
+              "Fn::Sub": "${AWS::Region}"
+            },
+            "--account_id": {
+              "Fn::Sub": "${AWS::AccountId}"
+            },
+            "--enable-continuous-cloudwatch-log": "true",
+            "--datalake-formats": "iceberg",
+            "--enable-glue-datacatalog": ""
+          },
+          "ExecutionProperty": {
+            "MaxConcurrentRuns": 1
+          },
+          "MaxRetries": 0,
+          "Timeout": 5,
+          "GlueVersion": "4.0",
+          "Name": "Personal ETL",
+          "Role": {
+            "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/GlueExecutionRole"
+          }
+        }
+      },
+      "WealthETLJob": {
+        "Type": "AWS::Glue::Job",
+        "DependsOn": [
+          "GlueExecutionRole"
+        ],
+        "Properties": {
+          "Command": {
+            "Name": "glueetl",
+            "ScriptLocation": {
+              "Fn::Join": [
+                "",
+                [
+                  "s3://",
+                  {
+                    "Fn::FindInMap": [
+                      "RegionMap",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      "SourceBucketName"
+                    ]
+                  },
+                  "/1bf9302a-862c-4e21-9e45-c81fa055643b/",
+                  {
+                    "Ref": "Version"
+                  },
+                  "/scripts/Wealth ETL.py"
+                ]
+              ]
+            }
+          },
+          "JobMode": "VISUAL",
+          "DefaultArguments": {
+            "--region": {
+              "Fn::Sub": "${AWS::Region}"
+            },
+            "--account_id": {
+              "Fn::Sub": "${AWS::AccountId}"
+            },
+            "--enable-continuous-cloudwatch-log": "true",
+            "--datalake-formats": "iceberg",
+            "--enable-glue-datacatalog": ""
+          },
+          "ExecutionProperty": {
+            "MaxConcurrentRuns": 1
+          },
+          "MaxRetries": 0,
+          "Timeout": 5,
+          "GlueVersion": "4.0",
+          "Name": "Wealth ETL",
+          "Role": {
+            "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/GlueExecutionRole"
+          }
+        }
+      },
+      "InsuranceETLJob": {
+        "Type": "AWS::Glue::Job",
+        "DependsOn": [
+          "GlueExecutionRole"
+        ],
+        "Properties": {
+          "Command": {
+            "Name": "glueetl",
+            "ScriptLocation": {
+              "Fn::Join": [
+                "",
+                [
+                  "s3://",
+                  {
+                    "Fn::FindInMap": [
+                      "RegionMap",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      "SourceBucketName"
+                    ]
+                  },
+                  "/1bf9302a-862c-4e21-9e45-c81fa055643b/",
+                  {
+                    "Ref": "Version"
+                  },
+                  "/scripts/Insurance ETL.py"
+                ]
+              ]
+            }
+          },
+          "JobMode": "VISUAL",
+          "DefaultArguments": {
+            "--region": {
+              "Fn::Sub": "${AWS::Region}"
+            },
+            "--account_id": {
+              "Fn::Sub": "${AWS::AccountId}"
+            },
+            "--enable-continuous-cloudwatch-log": "true",
+            "--datalake-formats": "iceberg",
+            "--enable-glue-datacatalog": ""
+          },
+          "ExecutionProperty": {
+            "MaxConcurrentRuns": 1
+          },
+          "MaxRetries": 0,
+          "Timeout": 5,
+          "GlueVersion": "4.0",
+          "Name": "Insurance ETL",
+          "Role": {
+            "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/GlueExecutionRole"
+          }
+        }
+      },
+      "InitCrawlerStateMachine": {
+        "Type": "AWS::StepFunctions::StateMachine",
+        "Properties": {
+          "StateMachineName": "Init_RunCrawler",
+          "StateMachineType": "STANDARD",
+          "DefinitionS3Location": {
+            "Bucket": {
+              "Fn::FindInMap": [
+                "RegionMap",
+                {
+                  "Ref": "AWS::Region"
+                },
+                "SourceBucketName"
+              ]
+            },
+            "Key": {
+              "Fn::Join": [
+                "",
+                [
+                  "1bf9302a-862c-4e21-9e45-c81fa055643b/",
+                  {
+                    "Ref": "Version"
+                  },
+                  "/scripts/stepfunction_init_runcrawler.json"
+                ]
+              ]
+            }
+          },
+          "RoleArn": {
+            "Fn::GetAtt": [
+              "StepFunctionsRole",
+              "Arn"
+            ]
+          }
+        }
+      },
+      "InitStateMachine": {
+        "Type": "AWS::StepFunctions::StateMachine",
+        "Properties": {
+          "StateMachineName": "Init",
+          "StateMachineType": "STANDARD",
+          "DefinitionS3Location": {
+            "Bucket": {
+              "Fn::FindInMap": [
+                "RegionMap",
+                {
+                  "Ref": "AWS::Region"
+                },
+                "SourceBucketName"
+              ]
+            },
+            "Key": {
+              "Fn::Join": [
+                "",
+                [
+                  "1bf9302a-862c-4e21-9e45-c81fa055643b/",
+                  {
+                    "Ref": "Version"
+                  },
+                  "/scripts/stepfunction_init.json"
+                ]
+              ]
+            }
+          },
+          "RoleArn": {
+            "Fn::GetAtt": [
+              "StepFunctionsRole",
+              "Arn"
+            ]
+          },
+          "DefinitionSubstitutions": {
+            "AccountId": {
+              "Fn::Sub": "${AWS::AccountId}"
+            },
+            "Region": {
+              "Fn::Sub": "${AWS::Region}"
+            }
+          }
+        }
+      }
+    },
+    "Outputs": {}
+  }
