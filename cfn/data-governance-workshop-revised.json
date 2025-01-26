@@ -649,7 +649,7 @@
                       "arn:aws:s3:::ws-assets-prod-iad-r-gru-527b8c19222c1182/*",
                       "arn:aws:s3:::ws-assets-prod-iad-r-cmh-8d6e9c21a4dec77d/*",
                       "arn:aws:s3:::ws-assets-prod-iad-r-sfo-f61fc67057535f1b/*",
-                      "arn:aws:s3:::ws-assets-prod-iad-r-pdx-f3b3f9f1a7d6a3d0/*"
+                      "arn:aws:s3:::datagov-workshop-assets-453874272819-us-west-2/*"
                     ]
                   }
                 ]
