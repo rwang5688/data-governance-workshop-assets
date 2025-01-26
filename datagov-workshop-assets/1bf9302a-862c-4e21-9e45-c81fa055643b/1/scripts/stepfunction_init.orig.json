@@ -12,7 +12,7 @@
                 "Type": "Task",
                 "Resource": "arn:aws:states:::states:startExecution.sync:2",
                 "Parameters": {
-                  "StateMachineArn": "arn:aws:states:us-west-2:453874272819:stateMachine:Init_RunCrawler",
+                  "StateMachineArn": "arn:aws:states:us-west-2:641164622205:stateMachine:Init_RunCrawler",
                   "Input": {
                     "CrawlerName": "crawler-personalbanking-raw"
                   }
@@ -36,7 +36,7 @@
                 "Type": "Task",
                 "Resource": "arn:aws:states:::states:startExecution.sync:2",
                 "Parameters": {
-                  "StateMachineArn": "arn:aws:states:us-west-2:453874272819:stateMachine:Init_RunCrawler",
+                  "StateMachineArn": "arn:aws:states:us-west-2:641164622205:stateMachine:Init_RunCrawler",
                   "Input": {
                     "CrawlerName": "crawler-wealthmgnt-raw"
                   }
@@ -60,7 +60,7 @@
                 "Type": "Task",
                 "Resource": "arn:aws:states:::states:startExecution.sync:2",
                 "Parameters": {
-                  "StateMachineArn": "arn:aws:states:us-west-2:453874272819:stateMachine:Init_RunCrawler",
+                  "StateMachineArn": "arn:aws:states:us-west-2:641164622205:stateMachine:Init_RunCrawler",
                   "Input": {
                     "CrawlerName": "crawler-insurance-raw"
                   }
