@@ -80,7 +80,7 @@
           "SourceBucketName": "ws-assets-prod-iad-r-nrt-2cb4b4649d0e0f94"
         },
         "us-west-2": {
-          "SourceBucketName": "data-governance-workshop-assets-453874272819-us-west-2"
+          "SourceBucketName": "datagov-workshop-assets-453874272819-us-west-2"
         },
         "us-west-1": {
           "SourceBucketName": "ws-assets-prod-iad-r-sfo-f61fc67057535f1b"
@@ -3065,7 +3065,7 @@
             ]
           },
           "ServiceTimeout": 360,
-          "data_source_bucket": "data-governance-workshop-assets-453874272819-us-west-2",
+          "data_source_bucket": "datagov-workshop-assets-453874272819-us-west-2",
           "data_source_prefix": "1bf9302a-862c-4e21-9e45-c81fa055643b",
           "target_bucket_personal_raw": {
             "Ref": "s3BucketPersonalRaw"
