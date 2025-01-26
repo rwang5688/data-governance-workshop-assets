@@ -1,0 +1,84 @@
+{
+    "Comment": "A description of my state machine",
+    "StartAt": "Parallel",
+    "States": {
+      "Parallel": {
+        "Type": "Parallel",
+        "Branches": [
+          {
+            "StartAt": "Personal Banking Raw Crawler",
+            "States": {
+              "Personal Banking Raw Crawler": {
+                "Type": "Task",
+                "Resource": "arn:aws:states:::states:startExecution.sync:2",
+                "Parameters": {
+                  "StateMachineArn": "arn:aws:states:us-west-2:641164622205:stateMachine:Init_RunCrawler",
+                  "Input": {
+                    "CrawlerName": "crawler-personalbanking-raw"
+                  }
+                },
+                "Next": "Personal ETL"
+              },
+              "Personal ETL": {
+                "Type": "Task",
+                "Resource": "arn:aws:states:::glue:startJobRun.sync",
+                "Parameters": {
+                  "JobName": "Personal ETL"
+                },
+                "End": true
+              }
+            }
+          },
+          {
+            "StartAt": "Wealth Management Raw Crawler",
+            "States": {
+              "Wealth Management Raw Crawler": {
+                "Type": "Task",
+                "Resource": "arn:aws:states:::states:startExecution.sync:2",
+                "Parameters": {
+                  "StateMachineArn": "arn:aws:states:us-west-2:641164622205:stateMachine:Init_RunCrawler",
+                  "Input": {
+                    "CrawlerName": "crawler-wealthmgnt-raw"
+                  }
+                },
+                "Next": "Wealth ETL"
+              },
+              "Wealth ETL": {
+                "Type": "Task",
+                "Resource": "arn:aws:states:::glue:startJobRun.sync",
+                "Parameters": {
+                  "JobName": "Wealth ETL"
+                },
+                "End": true
+              }
+            }
+          },
+          {
+            "StartAt": "Insurance Raw Crawler",
+            "States": {
+              "Insurance Raw Crawler": {
+                "Type": "Task",
+                "Resource": "arn:aws:states:::states:startExecution.sync:2",
+                "Parameters": {
+                  "StateMachineArn": "arn:aws:states:us-west-2:641164622205:stateMachine:Init_RunCrawler",
+                  "Input": {
+                    "CrawlerName": "crawler-insurance-raw"
+                  }
+                },
+                "Next": "Insurance ETL"
+              },
+              "Insurance ETL": {
+                "Type": "Task",
+                "Resource": "arn:aws:states:::glue:startJobRun.sync",
+                "Parameters": {
+                  "JobName": "Insurance ETL"
+                },
+                "End": true
+              }
+            }
+          }
+        ],
+        "End": true
+      }
+    }
+}

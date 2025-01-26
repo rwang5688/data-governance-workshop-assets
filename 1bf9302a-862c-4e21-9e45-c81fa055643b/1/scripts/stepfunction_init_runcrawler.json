@@ -1,0 +1,59 @@
+{
+    "Comment": "A description of my state machine",
+    "StartAt": "StartCrawler",
+    "States": {
+      "StartCrawler": {
+        "Type": "Task",
+        "Parameters": {
+          "Name.$": "$.CrawlerName"
+        },
+        "Resource": "arn:aws:states:::aws-sdk:glue:startCrawler",
+        "Next": "GetCrawler",
+        "ResultPath": null
+      },
+      "GetCrawler": {
+        "Type": "Task",
+        "Parameters": {
+          "Name.$": "$.CrawlerName"
+        },
+        "Resource": "arn:aws:states:::aws-sdk:glue:getCrawler",
+        "ResultPath": "$.TaskResult",
+        "Next": "Choice"
+      },
+      "Choice": {
+        "Type": "Choice",
+        "Choices": [
+          {
+            "Or": [
+              {
+                "Variable": "$.TaskResult.Crawler.State",
+                "StringEquals": "COMPLETED"
+              },
+              {
+                "Variable": "$.TaskResult.Crawler.State",
+                "StringEquals": "STOPPING"
+              }
+            ],
+            "Next": "Success"
+          },
+          {
+            "Variable": "$.TaskResult.Crawler.State",
+            "StringEquals": "RUNNING",
+            "Next": "Wait"
+          }
+        ],
+        "Default": "Fail"
+      },
+      "Wait": {
+        "Type": "Wait",
+        "Seconds": 5,
+        "Next": "GetCrawler"
+      },
+      "Success": {
+        "Type": "Succeed"
+      },
+      "Fail": {
+        "Type": "Fail"
+      }
+    }
+}
